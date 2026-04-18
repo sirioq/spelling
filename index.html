@@ -805,9 +805,12 @@ function renderBoxes(state) {
   const disp = document.getElementById('spelling-display');
   disp.innerHTML = '';
 
+  // Use the length of what is actually typed to decide how many boxes to show
+  // We add +1 if the word isn't finished to show the 'cursor' box
+  const displayLength = state === 'correct' ? word.length : Math.min(typed.length + 1, word.length);
   const { boxSize, fontSize, height } = calcBoxSize(word.length);
 
-  word.split('').forEach((ch, i) => {
+  for (let i = 0; i < displayLength; i++) {
     const box = document.createElement('div');
     box.className = 'letter-box';
     box.style.width    = boxSize + 'px';
@@ -816,10 +819,10 @@ function renderBoxes(state) {
 
     if (state === 'correct') {
       box.classList.add('correct');
-      box.textContent = ch.toUpperCase();
+      box.textContent = word[i].toUpperCase();
     } else if (state === 'wrong') {
       if (i < typed.length) {
-        const ok = typed[i] === ch;
+        const ok = typed[i] === word[i];
         box.classList.add(ok ? 'correct' : 'wrong');
         box.textContent = typed[i].toUpperCase();
       }
@@ -827,12 +830,13 @@ function renderBoxes(state) {
       if (i < typed.length) {
         box.classList.add('filled');
         box.textContent = typed[i].toUpperCase();
-      } else if (i === typed.length) {
+      } else if (i === typed.length && typed.length < word.length) {
+        // This is the "next" empty box waiting for a letter
         box.classList.add('cursor');
       }
     }
     disp.appendChild(box);
-  });
+  }
 }
 
 // ══════════════════════════════════════════════════════
