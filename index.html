@@ -47,6 +47,18 @@ body {
   100% { transform:translateY(-8vh) rotate(400deg);  opacity:0; }
 }
 
+/* */
+@keyframes hintFlash {
+  0% { background-color: #fffbe8; transform: scale(1); }
+  50% { background-color: #fff2b2; transform: scale(1.05); }
+  100% { background-color: #fffbe8; transform: scale(1); }
+}
+
+.hint-flash {
+  animation: hintFlash 0.4s ease-in-out;
+}
+
+
 /* ── page shell ── */
 .container {
   position:relative; z-index:1;
@@ -651,7 +663,7 @@ function init() {
   words.forEach(w => {
     const pill = document.createElement('div');
     pill.className = 'preview-pill';
-    pill.textContent = (w.emoji || '⭐') + ' ' + '_'.repeat(w.word.length);
+    pill.innerHTML = `${w.emoji || '⭐'} <span style="margin-left:8px">${w.word}</span>`;
     preview.appendChild(pill);
   });
 }
@@ -857,14 +869,28 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════════════════════
 //  HINT
 // ══════════════════════════════════════════════════════
+//
 function toggleHint() {
   const box = document.getElementById('hint-box');
+  const w = words[wordIdx];
+  
   if (box.style.display === 'none') {
-    const w = words[wordIdx];
+    // 1. Fill the hint box with the emoji, hint text, AND the actual word
     const emoji = w.emoji || '⭐';
-    const hint  = w.hint  || 'Listen to the word carefully! 👂';
-    box.textContent = `${emoji}  ${hint}`;
+    const hintText = w.hint || 'Look closely!';
+    
+    // We wrap the word in a span so we can style it or make it bold
+    box.innerHTML = `${emoji} ${hintText} <br> <strong style="font-size: 1.4rem; color: #a259ff;">${w.word.toUpperCase()}</strong>`;
+    
+    // 2. Show the box and add a little "pop" animation
     box.style.display = 'block';
+    box.classList.add('hint-flash');
+    
+    // 3. Optional: Automatically hide it after 2 seconds so she has to memorize it
+    setTimeout(() => {
+      box.style.display = 'none';
+      box.classList.remove('hint-flash');
+    }, 2000); 
   } else {
     box.style.display = 'none';
   }
