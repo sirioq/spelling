@@ -443,9 +443,9 @@ h1 {
 
     <div class="spelling-display" id="spelling-display"></div>
 
-    <!-- hidden real input for physical keyboard -->
+    <!-- hidden input for physical keyboard — readonly stops mobile keyboard popping up -->
     <input class="typed-input" id="typed-input" autocomplete="off" autocorrect="off"
-           autocapitalize="off" spellcheck="false" aria-hidden="true">
+           autocapitalize="off" spellcheck="false" aria-hidden="true" readonly>
 
     <div class="keyboard" id="keyboard"></div>
 
@@ -664,12 +664,8 @@ function showWord() {
   renderBoxes();
   updateScore();
 
-  // auto-speak after a short delay so the animation lands first
-  setTimeout(speakWord, 600);
-
-  // focus hidden input for physical keyboard
-  document.getElementById('typed-input').value = '';
-  document.getElementById('typed-input').focus();
+  // speak the word — slight delay so page transition settles first
+  setTimeout(speakWord, wordIdx === 0 ? 900 : 500);
 }
 
 // ══════════════════════════════════════════════════════
@@ -753,17 +749,11 @@ function handleKey(k) {
   });
 }
 
-// physical keyboard
-document.getElementById('typed-input').addEventListener('keydown', e => {
-  e.preventDefault();
-  if (e.key === 'Backspace')        handleKey('⌫');
-  else if (e.key === 'Enter')       checkSpelling();
-  else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toLowerCase());
-});
-
-// keep hidden input focused when card clicked
-document.getElementById('main-card').addEventListener('click', () => {
-  document.getElementById('typed-input').focus();
+// physical keyboard — listen on document so no focus needed
+document.addEventListener('keydown', e => {
+  if (e.key === 'Backspace')           { e.preventDefault(); handleKey('⌫'); }
+  else if (e.key === 'Enter')          { e.preventDefault(); checkSpelling(); }
+  else if (/^[a-zA-Z]$/.test(e.key))  { handleKey(e.key.toLowerCase()); }
 });
 
 // ══════════════════════════════════════════════════════
