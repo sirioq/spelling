@@ -198,14 +198,19 @@ h1 {
 /* ── spelling display (letter boxes) ── */
 .spelling-display {
   display:flex; justify-content:center;
-  flex-wrap:wrap; gap:6px;
-  margin-bottom:18px; min-height:60px;
+  flex-wrap:nowrap;
+  gap:4px;
+  margin-bottom:18px;
+  min-height:58px;
   align-items:center;
+  width:100%;
+  overflow:hidden;
 }
 .letter-box {
   font-family:'Fredoka One',cursive;
-  font-size:clamp(1.5rem,5vw,2.2rem);
-  width:clamp(38px,9vw,52px); height:clamp(44px,10vw,58px);
+  font-size:2rem;
+  width:48px; height:56px;
+  flex-shrink:0;
   border-radius:12px;
   display:flex; align-items:center; justify-content:center;
   border:3px solid #e0e0e0;
@@ -670,15 +675,38 @@ function showWord() {
 // ══════════════════════════════════════════════════════
 //  RENDER LETTER BOXES
 // ══════════════════════════════════════════════════════
+
+function calcBoxSize(letterCount) {
+  // Available width = card width minus padding (28px each side)
+  const card = document.getElementById('main-card');
+  const available = (card ? card.clientWidth : 320) - 56;
+  const gap = 4;
+  const totalGaps = (letterCount - 1) * gap;
+  // Max box size we'd ever want
+  const maxBox  = 56;
+  const maxFont = 2.0;
+  // Shrink to fit
+  const rawBox  = Math.floor((available - totalGaps) / letterCount);
+  const boxSize = Math.min(rawBox, maxBox);
+  // Font scales proportionally, capped
+  const fontSize = Math.min((boxSize / maxBox) * maxFont, maxFont);
+  const height   = Math.round(boxSize * 1.12);
+  return { boxSize, fontSize, height };
+}
+
 function renderBoxes(state) {
-  // state: undefined=normal, 'correct', 'wrong'
   const word = words[wordIdx].word.toLowerCase();
   const disp = document.getElementById('spelling-display');
   disp.innerHTML = '';
 
+  const { boxSize, fontSize, height } = calcBoxSize(word.length);
+
   word.split('').forEach((ch, i) => {
     const box = document.createElement('div');
     box.className = 'letter-box';
+    box.style.width    = boxSize + 'px';
+    box.style.height   = height + 'px';
+    box.style.fontSize = fontSize + 'rem';
 
     if (state === 'correct') {
       box.classList.add('correct');
@@ -690,7 +718,6 @@ function renderBoxes(state) {
         box.textContent = typed[i].toUpperCase();
       }
     } else {
-      // normal typing mode
       if (i < typed.length) {
         box.classList.add('filled');
         box.textContent = typed[i].toUpperCase();
@@ -758,14 +785,45 @@ function toggleHint() {
 // ══════════════════════════════════════════════════════
 //  TEXT-TO-SPEECH
 // ══════════════════════════════════════════════════════
+
+// Pre-load voices (Chrome loads them async)
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+function getBestVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = [
+    'Samantha',                   // iOS / macOS — most natural
+    'Daniel',                     // macOS UK English
+    'Karen',                      // macOS Australian
+    'Moira',                      // macOS Irish
+    'Google UK English Female',   // Chrome desktop
+    'Google UK English Male',
+    'Microsoft Libby Online (Natural)',  // Edge / Windows
+    'Microsoft Mia Online (Natural)',
+    'Microsoft Zira',
+  ];
+  for (const name of preferred) {
+    const match = voices.find(v => v.name === name);
+    if (match) return match;
+  }
+  return voices.find(v => v.lang === 'en-GB')
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0]
+      || null;
+}
+
 function speakWord() {
   if (!window.speechSynthesis) return;
   const word = words[wordIdx].word;
   window.speechSynthesis.cancel();
 
   const utter = new SpeechSynthesisUtterance(word);
-  utter.rate  = 0.82;   // slightly slower for a child
-  utter.pitch = 1.1;    // a little warmer/friendlier
+  utter.voice = getBestVoice();
+  utter.rate  = 0.82;
+  utter.pitch = 1.1;
   utter.lang  = 'en-GB';
 
   const btn = document.getElementById('btn-listen');
@@ -775,12 +833,15 @@ function speakWord() {
   window.speechSynthesis.speak(utter);
 }
 
-// speak in sentence context (after correct) for reinforcement
+// Speak again after a correct answer for reinforcement
 function speakSentence(word) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(word);
-  utter.rate = 0.85; utter.pitch = 1.1; utter.lang = 'en-GB';
+  utter.voice = getBestVoice();
+  utter.rate  = 0.85;
+  utter.pitch = 1.1;
+  utter.lang  = 'en-GB';
   setTimeout(() => window.speechSynthesis.speak(utter), 300);
 }
 
@@ -956,6 +1017,9 @@ function shuffle(arr) {
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
+
+// Recalculate box sizes if window is resized
+window.addEventListener('resize', () => { if (words.length) renderBoxes(); });
 
 // ── go! ──
 window.addEventListener('load', init);
