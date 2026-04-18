@@ -405,9 +405,89 @@ h1 {
   .card { padding:18px 12px; }
   .kb-key { font-size:.95rem; }
 }
+
+/* ── start screen ── */
+.start-screen {
+  position:fixed; inset:0; z-index:200;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:28px;
+  transition:opacity .5s, transform .5s;
+}
+.start-screen.hidden {
+  opacity:0; pointer-events:none; transform:scale(1.04);
+}
+.season-spring .start-screen { background:linear-gradient(160deg,#fff0f8 0%,#e8faf0 55%,#fffbe8 100%); }
+.season-summer .start-screen { background:linear-gradient(160deg,#fffbe0 0%,#d0f4ff 55%,#fff0c8 100%); }
+.season-autumn .start-screen { background:linear-gradient(160deg,#fff3e0 0%,#ffe0b0 45%,#ffd0c0 100%); }
+.season-winter .start-screen { background:linear-gradient(160deg,#e8f4ff 0%,#d8eeff 55%,#f0f8ff 100%); }
+
+.start-icon {
+  font-size:5rem; line-height:1;
+  animation:bounceIn .7s cubic-bezier(.34,1.56,.64,1) both;
+  margin-bottom:8px;
+}
+.start-title {
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(2rem,6vw,3rem);
+  color:var(--dark); margin-bottom:4px;
+  animation:bounceIn .7s .1s cubic-bezier(.34,1.56,.64,1) both;
+}
+.season-spring .start-title { text-shadow:3px 3px 0 #ff9de2; }
+.season-summer .start-title { text-shadow:3px 3px 0 #ffcc00; }
+.season-autumn .start-title { text-shadow:3px 3px 0 #ff8c00; }
+.season-winter .start-title { text-shadow:3px 3px 0 #74c7f0; }
+
+.start-word-count {
+  font-size:1.1rem; font-weight:800; margin-bottom:28px;
+  animation:bounceIn .7s .2s cubic-bezier(.34,1.56,.64,1) both;
+  transition:color .8s;
+}
+.season-spring .start-word-count { color:#c060a0; }
+.season-summer .start-word-count { color:#c08000; }
+.season-autumn .start-word-count { color:#a04000; }
+.season-winter .start-word-count { color:#2060a0; }
+
+.start-word-preview {
+  display:flex; flex-wrap:wrap; gap:8px;
+  justify-content:center; max-width:340px;
+  margin-bottom:32px;
+  animation:bounceIn .7s .25s cubic-bezier(.34,1.56,.64,1) both;
+}
+.preview-pill {
+  font-family:'Fredoka One',cursive; font-size:1rem;
+  padding:5px 14px; border-radius:20px;
+  color:white;
+  transition:background .8s;
+}
+.season-spring .preview-pill { background:linear-gradient(135deg,#e060b0,#c03090); }
+.season-summer .preview-pill { background:linear-gradient(135deg,#f5a300,#e08000); }
+.season-autumn .preview-pill { background:linear-gradient(135deg,#d06010,#a03800); }
+.season-winter .preview-pill { background:linear-gradient(135deg,#3090d0,#1060a0); }
+
+.btn-start {
+  font-family:'Fredoka One',cursive; font-size:1.6rem;
+  border:none; cursor:pointer;
+  padding:18px 48px; border-radius:30px;
+  background:var(--yellow); color:var(--dark);
+  box-shadow:0 7px 0 #c9a200;
+  transition:transform .1s, box-shadow .1s;
+  animation:bounceIn .7s .35s cubic-bezier(.34,1.56,.64,1) both;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-start:active { transform:translateY(6px); box-shadow:0 1px 0 #c9a200; }
 </style>
 </head>
 <body>
+<!-- ── start screen ── -->
+<div class="start-screen" id="start-screen">
+  <div class="start-icon" id="start-icon">🌸</div>
+  <div class="start-title">Ludovica's<br>Spelling Challenge!</div>
+  <div class="start-word-count" id="start-word-count">8 words this week</div>
+  <div class="start-word-preview" id="start-word-preview"></div>
+  <button class="btn-start" onclick="startGame()">Let's Go! 🔊</button>
+</div>
+
 <div id="particles"></div>
 
 <div class="container">
@@ -545,7 +625,6 @@ let currentSeason = 'spring';
 //  BOOT
 // ══════════════════════════════════════════════════════
 function init() {
-  // Read from words.js (loaded via <script src>)
   if (typeof SPELLING_WORDS === 'undefined' || !SPELLING_WORDS.length) {
     alert('⚠️  No words found! Make sure words.js is in the same folder as index.html.');
     return;
@@ -561,7 +640,26 @@ function init() {
 
   wordIdx = 0; score = 0; streak = 0; missed = [];
   updateScore();
-  showWord();
+
+  // Populate start screen
+  const S = SEASONS[season];
+  document.getElementById('start-icon').textContent = S.icon;
+  document.getElementById('start-word-count').textContent =
+    `${words.length} word${words.length !== 1 ? 's' : ''} this week`;
+  const preview = document.getElementById('start-word-preview');
+  preview.innerHTML = '';
+  words.forEach(w => {
+    const pill = document.createElement('div');
+    pill.className = 'preview-pill';
+    pill.textContent = (w.emoji || '⭐') + ' ' + '_'.repeat(w.word.length);
+    preview.appendChild(pill);
+  });
+}
+
+function startGame() {
+  // This tap is the user gesture browsers require before allowing audio
+  document.getElementById('start-screen').classList.add('hidden');
+  showWord(); // showWord calls speakWord internally
 }
 
 function applySeason(s) {
@@ -664,8 +762,8 @@ function showWord() {
   renderBoxes();
   updateScore();
 
-  // speak the word — slight delay so page transition settles first
-  setTimeout(speakWord, wordIdx === 0 ? 900 : 500);
+  // speak after a short delay so the card animation settles
+  setTimeout(speakWord, 500);
 }
 
 // ══════════════════════════════════════════════════════
@@ -987,7 +1085,16 @@ function playAgain() {
   words = shuffle([...SPELLING_WORDS]);
   wordIdx=0; score=0; streak=0; missed=[];
   buildStars(); updateScore(); updateStreak();
-  showWord();
+  // Show start screen again (re-populates preview with new shuffle)
+  const preview = document.getElementById('start-word-preview');
+  preview.innerHTML = '';
+  words.forEach(w => {
+    const pill = document.createElement('div');
+    pill.className = 'preview-pill';
+    pill.textContent = (w.emoji || '⭐') + ' ' + '_'.repeat(w.word.length);
+    preview.appendChild(pill);
+  });
+  document.getElementById('start-screen').classList.remove('hidden');
 }
 
 function retryMissed() {
