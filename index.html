@@ -1113,7 +1113,7 @@ function playAgain() {
   words.forEach(w => {
     const pill = document.createElement('div');
     pill.className = 'preview-pill';
-    pill.textContent = (w.emoji || '⭐') + ' ' + '_'.repeat(w.word.length);
+    pill.innerHTML = `${w.emoji || '⭐'} <span style="margin-left:8px">${w.word}</span>`;
     preview.appendChild(pill);
   });
   document.getElementById('start-screen').classList.remove('hidden');
