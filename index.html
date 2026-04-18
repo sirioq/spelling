@@ -883,24 +883,16 @@ if (window.speechSynthesis) {
 function getBestVoice() {
   const voices = window.speechSynthesis.getVoices();
   const preferred = [
-    'Samantha',                   // iOS / macOS — most natural
-    'Daniel',                     // macOS UK English
-    'Karen',                      // macOS Australian
-    'Moira',                      // macOS Irish
-    'Google UK English Female',   // Chrome desktop
-    'Google UK English Male',
-    'Microsoft Libby Online (Natural)',  // Edge / Windows
-    'Microsoft Mia Online (Natural)',
-    'Microsoft Zira',
+    'Google UK English Female',
+    'Google UK English Female',
+    'Daniel',
+    'Samantha',
   ];
   for (const name of preferred) {
     const match = voices.find(v => v.name === name);
     if (match) return match;
   }
-  return voices.find(v => v.lang === 'en-GB')
-      || voices.find(v => v.lang.startsWith('en'))
-      || voices[0]
-      || null;
+  return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
 }
 
 function speakWord() {
