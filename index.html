@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ludovica's Spelling Challenge! 🌟</title>
-<script src="words.js"></script>
+<script src="https://sirioq.github.io/spelling/words.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── reset ── */
@@ -469,6 +469,9 @@ h1 {
   -webkit-tap-highlight-color:transparent;
 }
 .btn-try-again:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.15); }
+
+/* ── TTS unavailable warning ── */
+.tts-warn {
   background:#fff3cd; border:2px solid var(--yellow);
   border-radius:12px; padding:8px 14px;
   font-size:.85rem; font-weight:700; color:#856404;
@@ -565,6 +568,19 @@ h1 {
 </div>
 
 <div id="particles"></div>
+
+<div id="voice-debug" style="position:fixed;bottom:10px;right:10px;z-index:999"></div>
+  <button onclick="showVoices()" style="background:#a259ff;color:white;border:none;padding:8px 14px;border-radius:10px;font-size:.85rem;font-weight:800;">🎙 List voices</button>
+  <div id="voice-out" style="background:white;padding:10px;border-radius:10px;max-height:200px;overflow-y:auto;font-size:.75rem;margin-top:4px;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2)"></div>
+</div>
+<script>
+function showVoices(){
+  const v=speechSynthesis.getVoices();
+  const el=document.getElementById('voice-out');
+  el.style.display='block';
+  el.innerHTML=v.map(v=>`<div><b>${v.name}</b> — ${v.lang} ${v.localService?'✅':'🌐'}</div>`).join('');
+}
+</script>
 
 <div class="container">
   <header>
@@ -967,50 +983,96 @@ function useHint() {
 //  TEXT-TO-SPEECH
 // ══════════════════════════════════════════════════════
 
-// Pre-load voices (Chrome loads them async)
+// iOS loads voices asynchronously — keep refreshing until we have them
+let _voicesReady = false;
+function _ensureVoices() {
+  if (_voicesReady) return;
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) _voicesReady = true;
+}
 if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    _voicesReady = false; // force re-evaluation next time
+    _ensureVoices();
+  };
+  // Kick off the first load
+  _ensureVoices();
 }
 
 function getBestVoice() {
   const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
 
-  // Detect iOS / iPadOS
+  // Detect iOS / iPadOS (including iPad on iPadOS 13+ which reports as MacIntel)
   const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-               || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+               || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+               || (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
 
-  // Priority list — Siri voices first on Apple, then high-quality alternatives elsewhere
-  const preferred = isApple
-    ? [
-        'Siri (English (United Kingdom))',
-        'Siri (English (United States))',
-        'Siri (English (Australia))',
-        'Siri Martha',      // older iOS label
-        'Siri Nicky',
-        'Siri Aaron',
-        'Samantha',         // fallback if Siri unavailable
-        'Daniel',
-      ]
-    : [
-        'Google UK English Female',
-        'Google UK English Male',
-        'Microsoft Libby Online (Natural)',
-        'Microsoft Mia Online (Natural)',
-        'Daniel',
-        'Samantha',
-      ];
+  if (isApple) {
+    // First: look for any voice whose name contains "Siri" — handles all naming variants
+    const siri = voices.find(v => v.name.toLowerCase().includes('siri'));
+    if (siri) return siri;
 
-  for (const name of preferred) {
-    const match = voices.find(v => v.name === name);
-    if (match) return match;
+    // Second: prefer any enhanced/premium en-GB local voice
+    const enhancedGB = voices.find(v =>
+      v.lang === 'en-GB' && v.localService &&
+      (v.name.includes('Enhanced') || v.name.includes('Premium') || v.name.includes('Compact'))
+    );
+    if (enhancedGB) return enhancedGB;
+
+    // Third: any local en-GB voice
+    const localGB = voices.find(v => v.lang === 'en-GB' && v.localService);
+    if (localGB) return localGB;
+
+    // Fourth: Samantha (always present on Apple)
+    const samantha = voices.find(v => v.name === 'Samantha');
+    if (samantha) return samantha;
+  } else {
+    // Non-Apple: prefer Google or Microsoft natural voices
+    const preferred = [
+      'Google UK English Female',
+      'Google UK English Male',
+      'Microsoft Libby Online (Natural)',
+      'Microsoft Mia Online (Natural)',
+      'Microsoft Ryan Online (Natural)',
+      'Daniel',
+    ];
+    for (const name of preferred) {
+      const match = voices.find(v => v.name === name);
+      if (match) return match;
+    }
   }
 
-  // Last resort: any en-GB, then any English, then whatever's available
+  // Universal fallback
   return voices.find(v => v.lang === 'en-GB')
       || voices.find(v => v.lang.startsWith('en'))
       || voices[0]
       || null;
+}
+
+function _speak(text, rate, pitch) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  function doSpeak() {
+    const voice = getBestVoice();
+    const utter = new SpeechSynthesisUtterance(text);
+    if (voice) utter.voice = voice;
+    utter.rate  = rate;
+    utter.pitch = pitch;
+    utter.lang  = 'en-GB';
+    return utter;
+  }
+
+  // If voices aren't loaded yet, wait for the event then speak
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.speak(doSpeak());
+    };
+  } else {
+    window.speechSynthesis.speak(doSpeak());
+  }
 }
 
 function speakWord() {
@@ -1018,8 +1080,10 @@ function speakWord() {
   const word = words[wordIdx].word;
   window.speechSynthesis.cancel();
 
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.voice = getBestVoice();
+  const voices = window.speechSynthesis.getVoices();
+  const utter  = new SpeechSynthesisUtterance(word);
+  const voice  = getBestVoice();
+  if (voice) utter.voice = voice;
   utter.rate  = 0.82;
   utter.pitch = 1.1;
   utter.lang  = 'en-GB';
@@ -1028,7 +1092,8 @@ function speakWord() {
   btn.classList.add('speaking');
   utter.onend = () => btn.classList.remove('speaking');
 
-  window.speechSynthesis.speak(utter);
+  // Small delay helps iOS actually apply the selected voice
+  setTimeout(() => window.speechSynthesis.speak(utter), 50);
 }
 
 // Speak the encouragement message after a correct answer.
@@ -1039,12 +1104,7 @@ function speakEncouragement(msg, definitionSuffix) {
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
   let text = stripEmoji(msg);
   if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.voice = getBestVoice();
-  utter.rate  = 0.92;
-  utter.pitch = 1.15;
-  utter.lang  = 'en-GB';
-  setTimeout(() => window.speechSynthesis.speak(utter), 200);
+  setTimeout(() => _speak(text, 0.92, 1.15), 200);
 }
 
 // ══════════════════════════════════════════════════════
