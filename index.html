@@ -307,14 +307,59 @@ h1 {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   font-family:'Fredoka One',cursive;
   opacity:0; pointer-events:none; transition:opacity .22s; z-index:10;
+  padding:18px 20px; gap:6px;
 }
 .feedback.show { opacity:1; pointer-events:all; }
-.feedback.correct { background:rgba(107,207,181,.93); }
-.feedback.wrong   { background:rgba(255,127,127,.90); }
-.fb-emoji { font-size:4rem; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
-.fb-title { font-size:1.7rem; color:white; text-shadow:2px 2px 0 rgba(0,0,0,.12); margin:6px 0 2px; }
-.fb-word  { font-size:1.3rem; color:rgba(255,255,255,.92); letter-spacing:2px; }
-.fb-sub   { font-family:'Nunito',sans-serif; font-weight:800; color:rgba(255,255,255,.85); font-size:.9rem; margin-top:4px; }
+.feedback.correct { background:rgba(107,207,181,.95); }
+.feedback.wrong   { background:rgba(255,100,100,.93); }
+
+/* correct feedback */
+.fb-emoji { font-size:3.6rem; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); line-height:1; }
+.fb-title {
+  font-size:1.6rem; color:white;
+  text-shadow:2px 2px 0 rgba(0,0,0,.12);
+  text-align:center; line-height:1.2;
+}
+.fb-sub {
+  font-family:'Nunito',sans-serif; font-weight:800;
+  color:rgba(255,255,255,.9); font-size:.9rem;
+}
+
+/* wrong feedback — diff comparison */
+.fb-diff {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  width:100%;
+}
+.fb-diff-row {
+  display:flex; align-items:center; gap:6px; flex-wrap:nowrap;
+  justify-content:center; width:100%;
+}
+.fb-diff-label {
+  font-family:'Nunito',sans-serif; font-size:.75rem; font-weight:800;
+  color:rgba(255,255,255,.8); width:42px; text-align:right;
+  flex-shrink:0; letter-spacing:.3px; text-transform:uppercase;
+}
+.fb-diff-boxes { display:flex; gap:4px; flex-wrap:nowrap; }
+.fb-letter {
+  font-family:'Fredoka One',cursive;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:9px; border:2px solid transparent;
+  flex-shrink:0;
+}
+/* correct row — all green */
+.fb-letter.fb-ok {
+  background:rgba(255,255,255,.95); color:#2a9a7a;
+  border-color:rgba(255,255,255,.6);
+}
+/* wrong row — green if right letter, red-ish if wrong, grey if missing */
+.fb-letter.fb-match   { background:rgba(255,255,255,.95); color:#2a9a7a; border-color:rgba(255,255,255,.6); }
+.fb-letter.fb-mismatch{ background:rgba(255,220,220,.95); color:#cc2020; border-color:#ff9090; animation:shake .35s ease; }
+.fb-letter.fb-missing { background:rgba(255,255,255,.3);  color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.3);
+  font-size:.8em; }
+.fb-try-again {
+  font-family:'Nunito',sans-serif; font-weight:800;
+  color:white; font-size:.95rem; margin-top:2px;
+}
 @keyframes popIn { 0%{transform:scale(0) rotate(-18deg);} 100%{transform:scale(1) rotate(0);} }
 
 /* ── burst stars ── */
@@ -549,8 +594,8 @@ h1 {
     <div class="feedback" id="feedback">
       <div class="fb-emoji" id="fb-emoji">🎉</div>
       <div class="fb-title" id="fb-title">Amazing!</div>
-      <div class="fb-word"  id="fb-word"></div>
       <div class="fb-sub"   id="fb-sub"></div>
+      <div class="fb-diff"  id="fb-diff" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -943,16 +988,18 @@ function speakWord() {
   window.speechSynthesis.speak(utter);
 }
 
-// Speak again after a correct answer for reinforcement
-function speakSentence(word) {
+// Speak the encouragement message after a correct answer
+function speakEncouragement(msg) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(word);
+  // Strip emojis for cleaner TTS
+  const clean = msg.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  const utter = new SpeechSynthesisUtterance(clean);
   utter.voice = getBestVoice();
-  utter.rate  = 0.85;
-  utter.pitch = 1.1;
+  utter.rate  = 0.92;
+  utter.pitch = 1.15;
   utter.lang  = 'en-GB';
-  setTimeout(() => window.speechSynthesis.speak(utter), 300);
+  setTimeout(() => window.speechSynthesis.speak(utter), 200);
 }
 
 // ══════════════════════════════════════════════════════
@@ -972,26 +1019,27 @@ function checkSpelling() {
     if (firstTry) { score++; streak++; earnStar(wordIdx); }
     else          { streak = 0; }
     updateScore(); updateStreak();
-    showFeedback(true, word.toUpperCase(),
-      firstTry ? PROMPTS_RIGHT[Math.floor(Math.random()*PROMPTS_RIGHT.length)]
-               : 'Got it this time! 💪');
+    const msg = firstTry
+      ? PROMPTS_RIGHT[Math.floor(Math.random()*PROMPTS_RIGHT.length)]
+      : 'Got it this time! 💪';
+    showFeedback(true, word, msg, typed);
     firework();
-    speakSentence(word);
+    speakEncouragement(msg);
     wordIdx++;
-    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 1900);
+    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2200);
   } else {
     renderBoxes('wrong');
     streak = 0; updateStreak();
     if (firstTry) missed.push(words[wordIdx]);
     firstTry = false;
-    showFeedback(false, word.toUpperCase(),
-      PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)]);
+    const msg = PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)];
+    showFeedback(false, word, msg, typed);
     speakWord();
     feedbackTimer = setTimeout(() => {
       hideFeedback();
       typed = '';
       renderBoxes();
-    }, 2200);
+    }, 3000);
   }
 }
 
@@ -1008,18 +1056,89 @@ function skipWord() {
 // ══════════════════════════════════════════════════════
 //  FEEDBACK OVERLAY
 // ══════════════════════════════════════════════════════
-function showFeedback(ok, word, msg) {
+function showFeedback(ok, correctWord, msg, typedAttempt) {
   const fb = document.getElementById('feedback');
   fb.className = 'feedback show ' + (ok ? 'correct' : 'wrong');
-  document.getElementById('fb-emoji').textContent = ok
-    ? ['🎉','🥳','⭐','🌟','🏆','💫','✨','🎊'][Math.floor(Math.random()*8)]
-    : ['😅','🤔','💪','🌈','😄'][Math.floor(Math.random()*5)];
-  document.getElementById('fb-title').textContent = msg;
-  document.getElementById('fb-word').textContent  = word;
-  document.getElementById('fb-sub').textContent   = ok ? '✅ Correct!' : '❌ Try again!';
+
+  const emojiEl = document.getElementById('fb-emoji');
+  const titleEl = document.getElementById('fb-title');
+  const subEl   = document.getElementById('fb-sub');
+  const diffEl  = document.getElementById('fb-diff');
+
+  if (ok) {
+    emojiEl.style.display = '';
+    emojiEl.textContent = ['🎉','🥳','⭐','🌟','🏆','💫','✨','🎊'][Math.floor(Math.random()*8)];
+    titleEl.textContent = msg;
+    subEl.textContent   = '✅ ' + correctWord.toUpperCase();
+    diffEl.style.display = 'none';
+  } else {
+    emojiEl.style.display = 'none';
+    titleEl.textContent  = msg;
+    subEl.style.display  = 'none';
+    diffEl.style.display = '';
+    diffEl.innerHTML     = '';
+
+    // Work out dynamic box size so diff fits on one line
+    const card      = document.getElementById('main-card');
+    const available = (card ? card.clientWidth : 320) - 56;
+    const maxBox    = 38;
+    const gap       = 4;
+    const labelW    = 48; // label + gap
+    const boxCount  = correctWord.length;
+    const rawBox    = Math.floor((available - labelW - (boxCount - 1) * gap) / boxCount);
+    const bx        = Math.min(rawBox, maxBox);
+    const fs        = Math.max(0.7, Math.min(1.1, bx / 34)) + 'rem';
+
+    function makeRow(label, letters, styleClass) {
+      const row = document.createElement('div');
+      row.className = 'fb-diff-row';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'fb-diff-label';
+      lbl.textContent = label;
+      row.appendChild(lbl);
+
+      const boxes = document.createElement('div');
+      boxes.className = 'fb-diff-boxes';
+      letters.forEach(({ch, cls}) => {
+        const b = document.createElement('div');
+        b.className = 'fb-letter ' + cls;
+        b.style.width    = bx + 'px';
+        b.style.height   = Math.round(bx * 1.15) + 'px';
+        b.style.fontSize = fs;
+        b.textContent    = ch;
+        boxes.appendChild(b);
+      });
+      row.appendChild(boxes);
+      return row;
+    }
+
+    // Correct row — all green
+    const correctLetters = correctWord.split('').map(ch => ({ ch: ch.toUpperCase(), cls: 'fb-ok' }));
+    diffEl.appendChild(makeRow('Correct', correctLetters));
+
+    // Your row — green where right, red where wrong, faded where missing
+    const attempt = (typedAttempt || '').toLowerCase();
+    const yourLetters = correctWord.split('').map((ch, i) => {
+      if (i >= attempt.length) return { ch: '?', cls: 'fb-missing' };
+      return attempt[i] === ch
+        ? { ch: attempt[i].toUpperCase(), cls: 'fb-match' }
+        : { ch: attempt[i].toUpperCase(), cls: 'fb-mismatch' };
+    });
+    diffEl.appendChild(makeRow('Yours', yourLetters));
+
+    const tryAgain = document.createElement('div');
+    tryAgain.className = 'fb-try-again';
+    tryAgain.textContent = '👂 Listen and try again!';
+    diffEl.appendChild(tryAgain);
+
+    subEl.style.display = 'none';
+  }
 }
+
 function hideFeedback() {
   document.getElementById('feedback').classList.remove('show');
+  document.getElementById('fb-sub').style.display = '';
 }
 
 // ══════════════════════════════════════════════════════
