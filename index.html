@@ -975,17 +975,42 @@ if (window.speechSynthesis) {
 
 function getBestVoice() {
   const voices = window.speechSynthesis.getVoices();
-  const preferred = [
-    'Google UK English Female',
-    'Google UK English Female',
-    'Daniel',
-    'Samantha',
-  ];
+
+  // Detect iOS / iPadOS
+  const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+               || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  // Priority list — Siri voices first on Apple, then high-quality alternatives elsewhere
+  const preferred = isApple
+    ? [
+        'Siri (English (United Kingdom))',
+        'Siri (English (United States))',
+        'Siri (English (Australia))',
+        'Siri Martha',      // older iOS label
+        'Siri Nicky',
+        'Siri Aaron',
+        'Samantha',         // fallback if Siri unavailable
+        'Daniel',
+      ]
+    : [
+        'Google UK English Female',
+        'Google UK English Male',
+        'Microsoft Libby Online (Natural)',
+        'Microsoft Mia Online (Natural)',
+        'Daniel',
+        'Samantha',
+      ];
+
   for (const name of preferred) {
     const match = voices.find(v => v.name === name);
     if (match) return match;
   }
-  return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
+
+  // Last resort: any en-GB, then any English, then whatever's available
+  return voices.find(v => v.lang === 'en-GB')
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0]
+      || null;
 }
 
 function speakWord() {
