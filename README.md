@@ -29,7 +29,7 @@ const SEASON = "spring"; // "spring" | "summer" | "autumn" | "winter"
 
 1. Push this folder to a GitHub repository.
 2. Go to **Settings → Pages** and set the source to your main branch / root.
-3. Your game will be live at `https://<your-username>.github.io/<repo-name>/`
+3. Your game will be live at `https://sirioq.github.io/spelling/`
 4. Each week, edit `words.js`, commit, and the live site updates automatically.
 
 ## How the game works
