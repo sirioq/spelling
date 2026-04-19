@@ -448,8 +448,27 @@ h1 {
   100% { transform:translateY(110vh) rotate(720deg);  opacity:.4; }
 }
 
-/* ── TTS unavailable warning ── */
-.tts-warn {
+/* ── word definition (shown always) ── */
+.word-definition {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:#fafafa; border-radius:14px; padding:9px 14px;
+  margin-bottom:14px; border:2px solid #f0e8ff;
+}
+.word-def-emoji { font-size:2rem; line-height:1; flex-shrink:0; }
+.word-def-text  { font-size:.95rem; font-weight:700; color:#6040a0; text-align:left; }
+
+/* ── try again button inside feedback overlay ── */
+.btn-try-again {
+  font-family:'Fredoka One',cursive; font-size:1.2rem;
+  border:none; cursor:pointer;
+  padding:12px 28px; border-radius:18px;
+  background:white; color:#cc2020;
+  box-shadow:0 4px 0 rgba(0,0,0,.15);
+  margin-top:8px;
+  transition:transform .1s, box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-try-again:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.15); }
   background:#fff3cd; border:2px solid var(--yellow);
   border-radius:12px; padding:8px 14px;
   font-size:.85rem; font-weight:700; color:#856404;
@@ -569,11 +588,16 @@ h1 {
 
   <div class="card" id="main-card">
     <div class="word-counter" id="word-counter">WORD 1 OF 8</div>
-    <div class="character" id="character">🌸</div>
+
+    <!-- emoji + definition shown for every word -->
+    <div class="word-definition" id="word-definition">
+      <div class="word-def-emoji" id="word-def-emoji">⭐</div>
+      <div class="word-def-text"  id="word-def-text">Listen carefully!</div>
+    </div>
 
     <div class="listen-area">
       <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
-      <button class="btn-hint" id="btn-hint" onclick="toggleHint()">💡 Hint</button>
+      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
     </div>
 
     <div class="hint-box" id="hint-box" style="display:none"></div>
@@ -596,6 +620,7 @@ h1 {
       <div class="fb-title" id="fb-title">Amazing!</div>
       <div class="fb-sub"   id="fb-sub"></div>
       <div class="fb-diff"  id="fb-diff" style="display:none"></div>
+      <button class="btn-try-again" id="btn-try-again" onclick="tryAgain()" style="display:none">👂 Try Again!</button>
     </div>
   </div>
 </div>
@@ -605,6 +630,7 @@ h1 {
   <div class="celeb-icon" id="celeb-icon">🌟</div>
   <div class="celeb-title" id="celeb-title">ALL DONE!</div>
   <div class="celeb-score" id="celeb-score">8 / 8 ⭐</div>
+  <div class="celeb-score" id="celeb-hints" style="font-size:1.1rem;opacity:.85">💡 0 hints used</div>
   <div class="celeb-msg"   id="celeb-msg">You're a spelling superstar!</div>
   <div class="missed-list" id="missed-list" style="display:none">
     <h3>Practice these again:</h3>
@@ -675,6 +701,7 @@ let streak    = 0;
 let typed     = '';
 let firstTry  = true;    // whether current word still on first attempt
 let missed    = [];      // words got wrong
+let hints     = 0;       // total hints used this session
 let feedbackTimer = null;
 let currentSeason = 'spring';
 
@@ -695,7 +722,7 @@ function init() {
   buildStars();
   checkTTS();
 
-  wordIdx = 0; score = 0; streak = 0; missed = [];
+  wordIdx = 0; score = 0; streak = 0; missed = []; hints = 0;
   updateScore();
 
   // Populate start screen
@@ -807,12 +834,11 @@ function showWord() {
   document.getElementById('strip-label').textContent =
     `Word ${wordIdx+1} of ${words.length}`;
 
-  // character
-  const S = SEASONS[currentSeason];
-  document.getElementById('character').textContent =
-    S.chars[Math.floor(Math.random()*S.chars.length)];
+  // show emoji + definition
+  document.getElementById('word-def-emoji').textContent = w.emoji || '⭐';
+  document.getElementById('word-def-text').textContent  = w.hint  || 'Listen carefully!';
 
-  // hint
+  // hide hint box
   document.getElementById('hint-box').style.display = 'none';
   document.getElementById('hint-box').textContent = '';
 
@@ -916,33 +942,25 @@ document.addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════════════
-//  HINT
+//  HINT — shows correct spelling briefly, tracks usage
 // ══════════════════════════════════════════════════════
-//
-function toggleHint() {
+function useHint() {
   const box = document.getElementById('hint-box');
-  const w = words[wordIdx];
-  
-  if (box.style.display === 'none') {
-    // 1. Fill the hint box with the emoji, hint text, AND the actual word
-    const emoji = w.emoji || '⭐';
-    const hintText = w.hint || 'Look closely!';
-    
-    // We wrap the word in a span so we can style it or make it bold
-    box.innerHTML = `${emoji} ${hintText} <br> <strong style="font-size: 1.4rem; color: #a259ff;">${w.word.toUpperCase()}</strong>`;
-    
-    // 2. Show the box and add a little "pop" animation
-    box.style.display = 'block';
-    box.classList.add('hint-flash');
-    
-    // 3. Optional: Automatically hide it after 2 seconds so she has to memorize it
-    setTimeout(() => {
-      box.style.display = 'none';
-      box.classList.remove('hint-flash');
-    }, 2000); 
-  } else {
+  const w   = words[wordIdx];
+
+  hints++;  // count every press
+
+  box.innerHTML = `<strong style="font-size:1.5rem;color:#a259ff;letter-spacing:3px;">${w.word.toUpperCase()}</strong>`;
+  box.style.display = 'block';
+  box.classList.remove('hint-flash');
+  void box.offsetWidth; // force reflow to restart animation
+  box.classList.add('hint-flash');
+
+  clearTimeout(box._hideTimer);
+  box._hideTimer = setTimeout(() => {
     box.style.display = 'none';
-  }
+    box.classList.remove('hint-flash');
+  }, 2000);
 }
 
 // ══════════════════════════════════════════════════════
@@ -988,13 +1006,15 @@ function speakWord() {
   window.speechSynthesis.speak(utter);
 }
 
-// Speak the encouragement message after a correct answer
-function speakEncouragement(msg) {
+// Speak the encouragement message after a correct answer.
+// On the last word, also speaks the word's definition (emoji title).
+function speakEncouragement(msg, definitionSuffix) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  // Strip emojis for cleaner TTS
-  const clean = msg.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
-  const utter = new SpeechSynthesisUtterance(clean);
+  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  let text = stripEmoji(msg);
+  if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
+  const utter = new SpeechSynthesisUtterance(text);
   utter.voice = getBestVoice();
   utter.rate  = 0.92;
   utter.pitch = 1.15;
@@ -1022,9 +1042,18 @@ function checkSpelling() {
     const msg = firstTry
       ? PROMPTS_RIGHT[Math.floor(Math.random()*PROMPTS_RIGHT.length)]
       : 'Got it this time! 💪';
+    const isLastWord = (wordIdx === words.length - 1);
     showFeedback(true, word, msg, typed);
     firework();
-    speakEncouragement(msg);
+
+    if (isLastWord) {
+      // On the final word, speak encouragement then the emoji title
+      const w = words[wordIdx];
+      speakEncouragement(msg, w.hint || '');
+    } else {
+      speakEncouragement(msg, '');
+    }
+
     wordIdx++;
     feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2200);
   } else {
@@ -1035,12 +1064,15 @@ function checkSpelling() {
     const msg = PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)];
     showFeedback(false, word, msg, typed);
     speakWord();
-    feedbackTimer = setTimeout(() => {
-      hideFeedback();
-      typed = '';
-      renderBoxes();
-    }, 3000);
+    // No timer — user must press Try Again button
   }
+}
+
+function tryAgain() {
+  if (feedbackTimer) clearTimeout(feedbackTimer);
+  hideFeedback();
+  typed = '';
+  renderBoxes();
 }
 
 function skipWord() {
@@ -1065,18 +1097,23 @@ function showFeedback(ok, correctWord, msg, typedAttempt) {
   const subEl   = document.getElementById('fb-sub');
   const diffEl  = document.getElementById('fb-diff');
 
+  const tryBtn = document.getElementById('btn-try-again');
+
   if (ok) {
     emojiEl.style.display = '';
     emojiEl.textContent = ['🎉','🥳','⭐','🌟','🏆','💫','✨','🎊'][Math.floor(Math.random()*8)];
     titleEl.textContent = msg;
     subEl.textContent   = '✅ ' + correctWord.toUpperCase();
+    subEl.style.display = '';
     diffEl.style.display = 'none';
+    tryBtn.style.display = 'none';
   } else {
     emojiEl.style.display = 'none';
     titleEl.textContent  = msg;
     subEl.style.display  = 'none';
     diffEl.style.display = '';
     diffEl.innerHTML     = '';
+    tryBtn.style.display = '';
 
     // Work out dynamic box size so diff fits on one line
     const card      = document.getElementById('main-card');
@@ -1126,13 +1163,6 @@ function showFeedback(ok, correctWord, msg, typedAttempt) {
         : { ch: attempt[i].toUpperCase(), cls: 'fb-mismatch' };
     });
     diffEl.appendChild(makeRow('Yours', yourLetters));
-
-    const tryAgain = document.createElement('div');
-    tryAgain.className = 'fb-try-again';
-    tryAgain.textContent = '👂 Listen and try again!';
-    diffEl.appendChild(tryAgain);
-
-    subEl.style.display = 'none';
   }
 }
 
@@ -1185,17 +1215,28 @@ function celebrate() {
 
   const total = words.length;
   const pct   = Math.round(score/total*100);
+  const perfect = score === total && hints === 0;
 
   document.getElementById('celeb-icon').textContent =
-    pct === 100 ? '👑' : pct >= 70 ? '🌟' : '💪';
+    perfect ? '👑' : pct === 100 ? '🌟' : pct >= 70 ? '🌟' : '💪';
   document.getElementById('celeb-title').textContent =
-    pct === 100 ? '🎆 PERFECT! 🎆' : pct >= 70 ? 'Great Job! 🌟' : 'Keep Practising! 💪';
+    perfect ? '🎆 PERFECT! 🎆' : pct === 100 ? 'All correct! 🌟' : pct >= 70 ? 'Great Job! 🌟' : 'Keep Practising! 💪';
   document.getElementById('celeb-score').textContent =
     `${score} / ${total} correct ⭐`;
-  document.getElementById('celeb-msg').textContent =
-    pct === 100
-      ? 'Ludovica, you spelled every single word right! Amazing! 👑'
-      : `Well done, Ludovica! You got ${score} out of ${total}!`;
+  document.getElementById('celeb-hints').textContent =
+    hints === 0 ? '💡 No hints used — amazing!' : `💡 ${hints} hint${hints !== 1 ? 's' : ''} used`;
+
+  let mainMsg = '';
+  if (perfect) {
+    mainMsg = 'Ludovica, you spelled every word right with no hints! You\'re incredible! 👑';
+  } else if (pct === 100) {
+    mainMsg = `Well done, Ludovica! All ${total} words correct! Next time try with no hints! 💡`;
+  } else {
+    mainMsg = `Well done, Ludovica! You got ${score} out of ${total}!`;
+  }
+
+  const aimMsg = perfect ? '' : ' Next time, aim for ' + total + '/' + total + ' with no hints! 🎯';
+  document.getElementById('celeb-msg').textContent = mainMsg + aimMsg;
 
   // missed words
   const uniqueMissed = [...new Set(missed.map(w => w.word))];
@@ -1224,7 +1265,7 @@ function launchConfetti() {
 function playAgain() {
   document.getElementById('celebration').classList.remove('show');
   words = shuffle([...SPELLING_WORDS]);
-  wordIdx=0; score=0; streak=0; missed=[];
+  wordIdx=0; score=0; streak=0; missed=[]; hints=0;
   buildStars(); updateScore(); updateStreak();
   // Show start screen again (re-populates preview with new shuffle)
   const preview = document.getElementById('start-word-preview');
@@ -1242,7 +1283,7 @@ function retryMissed() {
   document.getElementById('celebration').classList.remove('show');
   const uniqueMissed = [...new Set(missed.map(w => w.word))];
   words = shuffle(SPELLING_WORDS.filter(w => uniqueMissed.includes(w.word)));
-  wordIdx=0; score=0; streak=0; missed=[];
+  wordIdx=0; score=0; streak=0; missed=[]; hints=0;
   buildStars(); updateScore(); updateStreak();
   showWord();
 }
