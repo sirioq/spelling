@@ -983,7 +983,7 @@ const _audioCache = {};  // word -> url string (exists) | false (no file)
 let   _currentAudio = null;
 
 function _audioFilename(word) {
-  return '../audio/' + word.toLowerCase().replace(/ /g, '_');
+  return 'audio/' + word.toLowerCase().replace(/ /g, '_');
 }
 
 // Check if an audio file exists for this word (mp3 then aiff)
@@ -1109,7 +1109,7 @@ function speakEncouragement(msg, definitionSuffix) {
 
   // Build the encouragement audio filename the same way the shell script does:
   // lowercase, strip punctuation, spaces to underscores
-  const encFilename = '../audio/encouragement/' +
+  const encFilename = 'audio/encouragement/' +
     cleanMsg.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
 
   function playDefinition() {
