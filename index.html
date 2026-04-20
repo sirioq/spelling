@@ -781,6 +781,7 @@ function startGame() {
 
   // Pre-probe all encouragement clips too
   PROMPTS_RIGHT.forEach(msg => _probeAudio(_encKey(msg)));
+  PROMPTS_WRONG.forEach(msg => _probeAudio(_encKey(msg)));
   _probeAudio(_encKey('Got it this time! 💪'));
 
   showWord(); // showWord calls speakWord internally
@@ -1211,6 +1212,43 @@ function speakEncouragement(msg, definitionSuffix) {
   if (cachedUrl === undefined) _probeAudio(key);
 }
 
+// Speak a wrong-answer encouragement prompt, then repeat the word.
+// Used so the child hears "Almost! Try again!" followed by the word to spell.
+function speakEncouragementThenWord(msg, word) {
+  _stopAudio();
+
+  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  const cleanMsg = stripEmoji(msg);
+  const key = _encKey(msg);
+  const cachedUrl = _audioCache[key];
+
+  function thenSpeakWord() {
+    setTimeout(() => _speakTTS(word, 0.82, 1.1), 400);
+  }
+
+  if (cachedUrl) {
+    _encAudioEl.src = cachedUrl;
+    _currentAudio = _encAudioEl;
+    _encAudioEl.onended = () => { _currentAudio = null; thenSpeakWord(); };
+    _encAudioEl.onerror = () => { _currentAudio = null; _speakTTS(cleanMsg + '. ' + word, 0.92, 1.1); };
+    setTimeout(() => _encAudioEl.play().catch(() => { _speakTTS(cleanMsg + '. ' + word, 0.92, 1.1); }), 200);
+    return;
+  }
+
+  // No file — TTS the prompt then the word together
+  setTimeout(() => {
+    _speakTTS(cleanMsg, 0.92, 1.15);
+    // Queue the word as a second utterance after a gap
+    const wordUtter = new SpeechSynthesisUtterance(word);
+    const voice = getBestVoice();
+    if (voice) wordUtter.voice = voice;
+    wordUtter.rate = 0.82; wordUtter.pitch = 1.1; wordUtter.lang = 'en-GB';
+    window.speechSynthesis.speak(wordUtter);
+  }, 200);
+
+  if (cachedUrl === undefined) _probeAudio(key);
+}
+
 // ══════════════════════════════════════════════════════
 //  CHECK
 // ══════════════════════════════════════════════════════
@@ -1252,7 +1290,8 @@ function checkSpelling() {
     firstTry = false;
     const msg = PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)];
     showFeedback(false, word, msg, typed);
-    speakWord();
+    // Speak the encouragement prompt, then repeat the word after it finishes
+    speakEncouragementThenWord(msg, word);
     // No timer — user must press Try Again button
   }
 }
