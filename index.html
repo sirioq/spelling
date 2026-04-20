@@ -599,7 +599,7 @@ h1 {
     </div>
 
     <div class="listen-area">
-      <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
+      <button class="btn-listen" id="btn-listen" onclick="_unlockAudio();speakWord()" title="Hear the word">🔊</button>
       <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
     </div>
 
@@ -753,7 +753,8 @@ function init() {
 }
 
 function startGame() {
-  // This tap is the user gesture browsers require before allowing audio
+  // Unlock iOS audio on this user gesture before any programmatic play
+  _unlockAudio();
   document.getElementById('start-screen').classList.add('hidden');
   showWord(); // showWord calls speakWord internally
 }
@@ -982,6 +983,30 @@ function useHint() {
 const _audioCache = {};  // word -> url string (exists) | false (no file)
 let   _currentAudio = null;
 
+// ── iOS audio unlock ──────────────────────────────────
+// Safari on iOS/iPadOS requires audio to be triggered directly from a user
+// gesture. We unlock a shared Audio element on the first tap so that
+// subsequent programmatic plays (autoplay on new word, encouragement) work.
+let _audioUnlocked = false;
+const _silentUnlockAudio = new Audio();
+
+function _unlockAudio() {
+  if (_audioUnlocked) return;
+  _audioUnlocked = true;
+  // Play a silent 1-sample data URI to warm up the audio pipeline
+  _silentUnlockAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAA' +
+    'EAAQAAwF0AAIC7AAACABAAZGF0YQAAAAA=';
+  _silentUnlockAudio.volume = 0;
+  _silentUnlockAudio.play().catch(() => {});
+  // Also resume any suspended AudioContext (belt-and-braces)
+  if (window.AudioContext || window.webkitAudioContext) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ctx.resume().catch(() => {});
+    } catch(e) {}
+  }
+}
+
 function _audioFilename(word) {
   return 'audio/' + word.toLowerCase().replace(/ /g, '_');
 }
@@ -1001,7 +1026,10 @@ function _probeAudio(word) {
 }
 
 function _stopAudio() {
-  if (_currentAudio) { _currentAudio.pause(); _currentAudio.currentTime = 0; _currentAudio = null; }
+  if (_currentAudio) {
+    try { _currentAudio.pause(); _currentAudio.currentTime = 0; } catch(e) {}
+    _currentAudio = null;
+  }
 }
 
 // ── Web Speech API (fallback) ─────────────────────────
@@ -1073,6 +1101,11 @@ function _speakTTS(text, rate, pitch) {
 
 // ── Main speak functions ──────────────────────────────
 
+// A single reused Audio element — iOS allows play() on a previously-unlocked
+// element even outside a direct user gesture.
+const _wordAudioEl = new Audio();
+_wordAudioEl.playbackRate = 0.92;
+
 function speakWord() {
   _stopAudio();
   const word = words[wordIdx].word;
@@ -1082,13 +1115,12 @@ function speakWord() {
   _probeAudio(word).then(url => {
     if (url) {
       if (ind) ind.textContent = '🔊 audio file';
-      const audio = new Audio(url);
-      audio.playbackRate = 0.92;
-      _currentAudio = audio;
       btn.classList.add('speaking');
-      audio.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
-      audio.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _speakTTS(word, 0.82, 1.1); };
-      audio.play().catch(() => _speakTTS(word, 0.82, 1.1));
+      _wordAudioEl.src = url;
+      _currentAudio = _wordAudioEl;
+      _wordAudioEl.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
+      _wordAudioEl.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _speakTTS(word, 0.82, 1.1); };
+      _wordAudioEl.play().catch(() => { btn.classList.remove('speaking'); _speakTTS(word, 0.82, 1.1); });
     } else {
       if (ind) ind.textContent = '🎙 ' + (getBestVoice()?.name ?? 'TTS default');
       btn.classList.add('speaking');
@@ -1097,6 +1129,9 @@ function speakWord() {
     }
   });
 }
+
+// Reused element for encouragement clips
+const _encAudioEl = new Audio();
 
 // Speak encouragement after correct answer.
 // On the last word, also speaks the definition.
@@ -1132,12 +1167,11 @@ function speakEncouragement(msg, definitionSuffix) {
     fetch(urls[i], { method: 'GET' })
       .then(r => {
         if (r.ok) {
-          const audio = new Audio(urls[i]);
-          audio.playbackRate = 1.0;
-          _currentAudio = audio;
-          audio.onended = () => { _currentAudio = null; playDefinition(); };
-          audio.onerror = () => { _currentAudio = null; tryUrl(i + 1); };
-          setTimeout(() => audio.play().catch(() => tryUrl(i + 1)), 200);
+          _encAudioEl.src = urls[i];
+          _currentAudio = _encAudioEl;
+          _encAudioEl.onended = () => { _currentAudio = null; playDefinition(); };
+          _encAudioEl.onerror = () => { _currentAudio = null; tryUrl(i + 1); };
+          setTimeout(() => _encAudioEl.play().catch(() => tryUrl(i + 1)), 200);
         } else {
           tryUrl(i + 1);
         }
