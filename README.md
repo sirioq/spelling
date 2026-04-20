@@ -24,6 +24,13 @@ You can also change the season theme at the bottom of `words.js`:
 ```js
 const SEASON = "spring"; // "spring" | "summer" | "autumn" | "winter"
 ```
+cd spelling
+./generate-audio.sh
+git add .
+git commit -m "Week of 28 April"
+git push
+
+
 
 ## Hosting on GitHub Pages
 

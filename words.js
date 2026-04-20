@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  WEEKLY SPELLING WORDS  —  edit this file each week!
 //  Each entry needs a "word". The "hint" is optional but helps
-//  if Ludovica gets stuck. You can also add an "emoji" for fun.
+//  if Ludovica gets stuck. You can also add an "emoji" for fun. ./generate-audio.sh
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
