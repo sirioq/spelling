@@ -600,7 +600,7 @@ h1 {
 
     <div class="listen-area">
       <button class="btn-listen" id="btn-listen" onclick="_unlockAudio();speakWord()" title="Hear the word">🔊</button>
-      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
+      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Hint</button>
     </div>
 
     <div class="hint-box" id="hint-box" style="display:none"></div>
@@ -685,7 +685,6 @@ const PROMPTS_RIGHT = [
   'Superstar speller!',
   'Incredible!',
   'Nailed it!',
-  'Got it this time!',
 ];
 const PROMPTS_WRONG = [
   'Not quite, listen again!',
@@ -1274,9 +1273,7 @@ function checkSpelling() {
     firework();
 
     if (isLastWord) {
-      // On the final word, speak encouragement then the emoji title
-      const w = words[wordIdx];
-      speakEncouragement(msg, w.hint || '');
+      speakEncouragement(msg, '');
     } else {
       speakEncouragement(msg, '');
     }
