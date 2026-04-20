@@ -779,6 +779,10 @@ function startGame() {
   // by the time the user reaches each word.
   words.forEach(w => _probeAudio(w.word));
 
+  // Pre-probe all encouragement clips too
+  PROMPTS_RIGHT.forEach(msg => _probeAudio(_encKey(msg)));
+  _probeAudio(_encKey('Got it this time! 💪'));
+
   showWord(); // showWord calls speakWord internally
 }
 
@@ -1161,11 +1165,18 @@ function speakWord() {
 // Reused element for encouragement clips
 const _encAudioEl = new Audio();
 
+// Convert an encouragement message to the cache key used by _probeAudio.
+// _probeAudio stores: _audioCache[key] = url  (or false if not found)
+// We pass the full base path as the "word" so it builds audio/... + .mp3/.aiff
+function _encKey(msg) {
+  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  return 'encouragement/' + stripEmoji(msg).toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
+}
+
 // Speak encouragement after correct answer.
 // On the last word, also speaks the definition.
 function speakEncouragement(msg, definitionSuffix) {
   _stopAudio();
-  if (!window.speechSynthesis && !window.Audio) return;
 
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
   const cleanMsg = stripEmoji(msg);
@@ -1176,14 +1187,13 @@ function speakEncouragement(msg, definitionSuffix) {
     }
   }
 
-  const encFilename = 'audio/encouragement/' +
-    cleanMsg.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
-
-  // Check cache first (same key as _probeAudio uses)
-  const mp3key = encFilename + '.mp3';
-  const cachedUrl = _audioCache[mp3key] || _audioCache[encFilename + '.aiff'];
+  // _probeAudio uses _audioCache[key] where key is the plain "word" passed in.
+  // We pass the enc path so it builds: audio/<key>.mp3 / audio/<key>.aiff
+  const key = _encKey(msg);
+  const cachedUrl = _audioCache[key]; // set by _probeAudio: url string or false
 
   if (cachedUrl) {
+    // Confirmed audio file in cache — play it
     _encAudioEl.src = cachedUrl;
     _currentAudio = _encAudioEl;
     _encAudioEl.onended = () => { _currentAudio = null; playDefinition(); };
@@ -1192,20 +1202,13 @@ function speakEncouragement(msg, definitionSuffix) {
     return;
   }
 
-  // No cached URL — speak via TTS immediately, then probe in background
+  // No file (false) or not yet probed (undefined) — fall back to TTS immediately
   let text = cleanMsg;
   if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
   setTimeout(() => _speakTTS(text, 0.92, 1.15), 200);
 
-  // Probe in background to warm the cache for next time
-  const urls = [mp3key, encFilename + '.aiff'];
-  function tryProbe(i) {
-    if (i >= urls.length) return;
-    fetch(urls[i], { method: 'GET' })
-      .then(r => { if (r.ok) _audioCache[urls[i]] = urls[i]; else tryProbe(i + 1); })
-      .catch(() => tryProbe(i + 1));
-  }
-  if (_audioCache[mp3key] === undefined) tryProbe(0);
+  // Probe in background so next time this message plays it uses the audio file
+  if (cachedUrl === undefined) _probeAudio(key);
 }
 
 // ══════════════════════════════════════════════════════
