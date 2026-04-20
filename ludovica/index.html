@@ -983,7 +983,7 @@ const _audioCache = {};  // word -> url string (exists) | false (no file)
 let   _currentAudio = null;
 
 function _audioFilename(word) {
-  return 'audio/' + word.toLowerCase().replace(/ /g, '_');
+  return '../audio/' + word.toLowerCase().replace(/ /g, '_');
 }
 
 // Check if an audio file exists for this word (mp3 then aiff)
@@ -993,7 +993,7 @@ function _probeAudio(word) {
   const urls = [_audioFilename(word) + '.mp3', _audioFilename(word) + '.aiff'];
   function tryNext(i) {
     if (i >= urls.length) { _audioCache[word] = false; return Promise.resolve(null); }
-    return fetch(urls[i], { method: 'HEAD' })
+    return fetch(urls[i], { method: 'GET' })
       .then(r => { if (r.ok) { _audioCache[word] = urls[i]; return urls[i]; } return tryNext(i+1); })
       .catch(() => tryNext(i+1));
   }
@@ -1109,7 +1109,7 @@ function speakEncouragement(msg, definitionSuffix) {
 
   // Build the encouragement audio filename the same way the shell script does:
   // lowercase, strip punctuation, spaces to underscores
-  const encFilename = 'audio/encouragement/' +
+  const encFilename = '../audio/encouragement/' +
     cleanMsg.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
 
   function playDefinition() {
@@ -1129,7 +1129,7 @@ function speakEncouragement(msg, definitionSuffix) {
       setTimeout(() => _speakTTS(text, 0.92, 1.15), 200);
       return;
     }
-    fetch(urls[i], { method: 'HEAD' })
+    fetch(urls[i], { method: 'GET' })
       .then(r => {
         if (r.ok) {
           const audio = new Audio(urls[i]);
