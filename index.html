@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ludovica's Spelling Challenge! 🌟</title>
+<script src="words.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── reset ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+/* ── tokens ── */
+:root {
+  --yellow: #FFD93D;
+  --mint:   #6BCFB5;
+  --white:  #FFFDF9;
+  --dark:   #2D2250;
+  --radius-card: 28px;
+}
+
+/* ── season classes applied to <body> ── */
+body {
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.9s;
+}
+
+/* backgrounds */
+.season-spring { background: linear-gradient(160deg,#fff0f8 0%,#e8faf0 55%,#fffbe8 100%); }
+.season-summer { background: linear-gradient(160deg,#fffbe0 0%,#d0f4ff 55%,#fff0c8 100%); }
+.season-autumn { background: linear-gradient(160deg,#fff3e0 0%,#ffe0b0 45%,#ffd0c0 100%); }
+.season-winter { background: linear-gradient(160deg,#e8f4ff 0%,#d8eeff 55%,#f0f8ff 100%); }
+
+/* ── floating particles ── */
+#particles { position:fixed; inset:0; pointer-events:none; z-index:0; }
+.particle {
+  position:absolute; pointer-events:none;
+  animation: floatUp linear infinite;
+  opacity:0;
+}
+@keyframes floatUp {
+  0%   { transform:translateY(105vh) rotate(0deg);   opacity:0; }
+  8%   { opacity:0.75; }
+  92%  { opacity:0.75; }
+  100% { transform:translateY(-8vh) rotate(400deg);  opacity:0; }
+}
+
+/* */
+@keyframes hintFlash {
+  0% { background-color: #fffbe8; transform: scale(1); }
+  50% { background-color: #fff2b2; transform: scale(1.05); }
+  100% { background-color: #fffbe8; transform: scale(1); }
+}
+
+.hint-flash {
+  animation: hintFlash 0.4s ease-in-out;
+}
+
+
+/* ── page shell ── */
+.container {
+  position:relative; z-index:1;
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:18px 14px 48px;
+  gap:14px;
+}
+
+/* ── header ── */
+header { text-align:center; animation:bounceIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes bounceIn {
+  0%   { transform:scale(0) rotate(-8deg); opacity:0; }
+  100% { transform:scale(1) rotate(0);     opacity:1; }
+}
+.hd-icon { font-size:2.4rem; line-height:1; }
+h1 {
+  font-family:'Fredoka One', cursive;
+  font-size:clamp(1.7rem,5vw,2.8rem);
+  color:var(--dark);
+  letter-spacing:.5px;
+  margin:2px 0 2px;
+  transition: text-shadow .8s;
+}
+.season-spring h1 { text-shadow:3px 3px 0 #ff9de2; }
+.season-summer h1 { text-shadow:3px 3px 0 #ffcc00; }
+.season-autumn h1 { text-shadow:3px 3px 0 #ff8c00; }
+.season-winter h1 { text-shadow:3px 3px 0 #74c7f0; }
+.hd-sub { font-size:.95rem; font-weight:700; transition:color .8s; }
+.season-spring .hd-sub { color:#c060a0; }
+.season-summer .hd-sub { color:#c08000; }
+.season-autumn .hd-sub { color:#a04000; }
+.season-winter .hd-sub { color:#2060a0; }
+
+/* ── progress strip ── */
+.progress-strip {
+  width:100%; max-width:480px;
+  background:white; border-radius:18px;
+  padding:11px 16px;
+  box-shadow:0 4px 18px rgba(0,0,0,.08);
+  animation:slideDown .55s .25s both;
+}
+@keyframes slideDown {
+  from { transform:translateY(-16px); opacity:0; }
+  to   { transform:translateY(0);     opacity:1; }
+}
+.strip-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.strip-label { font-weight:800; color:var(--dark); font-size:.9rem; }
+.score-pill {
+  background:var(--yellow); color:var(--dark);
+  padding:2px 11px; border-radius:20px;
+  font-family:'Fredoka One',cursive; font-size:.95rem;
+}
+.stars-row { display:flex; gap:3px; flex-wrap:wrap; }
+.s-icon { font-size:1.1rem; filter:grayscale(1) opacity(.25); transition:filter .3s; }
+.s-icon.lit { filter:none; animation:sPop .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes sPop { 0% { transform:scale(0) rotate(-25deg); } 100% { transform:scale(1) rotate(0); } }
+
+.streak-pill {
+  font-family:'Fredoka One',cursive; font-size:.85rem;
+  background:var(--yellow); color:var(--dark);
+  padding:2px 11px; border-radius:14px;
+  display:inline-block; margin-top:6px;
+  opacity:0; transform:scale(0);
+  transition:opacity .3s,transform .3s;
+  box-shadow:0 3px 0 #c9a200;
+}
+.streak-pill.show { opacity:1; transform:scale(1); }
+
+/* ── main card ── */
+.card {
+  width:100%; max-width:480px;
+  background:white; border-radius:var(--radius-card);
+  padding:26px 28px;
+  box-shadow:0 8px 36px rgba(0,0,0,.10);
+  position:relative; overflow:hidden;
+  animation:slideUp .55s .15s both;
+}
+@keyframes slideUp {
+  from { transform:translateY(24px); opacity:0; }
+  to   { transform:translateY(0);    opacity:1; }
+}
+.card::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  transition:background .8s;
+}
+.season-spring .card::before { background:linear-gradient(135deg,rgba(255,160,220,.06),rgba(160,240,200,.06)); }
+.season-summer .card::before { background:linear-gradient(135deg,rgba(255,220,80,.07),rgba(80,220,255,.07)); }
+.season-autumn .card::before { background:linear-gradient(135deg,rgba(255,140,40,.07),rgba(200,80,0,.07));   }
+.season-winter .card::before { background:linear-gradient(135deg,rgba(100,180,255,.07),rgba(200,230,255,.07)); }
+
+/* ── word number indicator ── */
+.word-counter {
+  font-size:.82rem; font-weight:800; color:#aaa;
+  text-align:center; margin-bottom:10px;
+  letter-spacing:.5px; text-transform:uppercase;
+}
+
+/* ── character ── */
+.character {
+  font-size:3rem; text-align:center;
+  animation:wiggle 2.2s ease-in-out infinite;
+  margin-bottom:4px;
+}
+@keyframes wiggle {
+  0%,100% { transform:rotate(-5deg); }
+  50%      { transform:rotate(5deg);  }
+}
+
+/* ── listen button ── */
+.listen-area { display:flex; justify-content:center; margin-bottom:16px; gap:10px; align-items:center; }
+
+.btn-listen {
+  font-size:2.4rem;
+  background:none; border:none; cursor:pointer;
+  line-height:1;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.15));
+  transition:transform .15s;
+  -webkit-tap-highlight-color:transparent;
+  animation:pulse 2.5s ease-in-out infinite;
+}
+.btn-listen:active { transform:scale(.88); }
+@keyframes pulse {
+  0%,100% { transform:scale(1);    filter:drop-shadow(0 3px 5px rgba(0,0,0,.15)); }
+  50%      { transform:scale(1.12); filter:drop-shadow(0 4px 10px rgba(0,0,0,.22)); }
+}
+.btn-listen.speaking { animation:none; transform:scale(1.15); }
+
+.btn-hint {
+  font-family:'Fredoka One',cursive; font-size:.95rem;
+  border:none; cursor:pointer;
+  padding:7px 14px; border-radius:14px;
+  background:#f0f0ff; color:#8060c0;
+  box-shadow:0 3px 0 #c8b8f0;
+  transition:transform .1s,box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-hint:active { transform:translateY(3px); box-shadow:0 0 0 #c8b8f0; }
+
+.hint-box {
+  background:#fffbe8; border:2px dashed var(--yellow);
+  border-radius:14px; padding:9px 14px;
+  font-size:.95rem; font-weight:700; color:var(--dark);
+  margin-bottom:14px; text-align:center;
+  animation:fadeIn .3s;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+
+/* ── spelling display (letter boxes) ── */
+.spelling-display {
+  display:flex; justify-content:center;
+  flex-wrap:nowrap;
+  gap:4px;
+  margin-bottom:18px;
+  min-height:58px;
+  align-items:center;
+  width:100%;
+  overflow:hidden;
+}
+.letter-box {
+  font-family:'Fredoka One',cursive;
+  font-size:2rem;
+  width:48px; height:56px;
+  flex-shrink:0;
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  border:3px solid #e0e0e0;
+  background:#fafafa;
+  color:var(--dark);
+  transition:border-color .3s, background .3s;
+  position:relative;
+}
+.letter-box.filled  { border-color:#b0b0e0; background:#f0f0ff; }
+.letter-box.cursor  { border-color:#a259ff; background:#f5eeff; animation:blink .9s step-end infinite; }
+.letter-box.correct { border-color:#6bcfb5; background:#e8faf5; color:#2a9a7a; }
+.letter-box.wrong   { border-color:#ff8080; background:#fff0f0; color:#cc3030; animation:shake .35s ease; }
+@keyframes blink { 0%,100%{ border-color:#a259ff; } 50%{ border-color:#d0b0ff; } }
+@keyframes shake {
+  0%,100%{ transform:translateX(0);   }
+  25%    { transform:translateX(-5px);}
+  75%    { transform:translateX(5px); }
+}
+
+/* typed-in bar (hidden, just for reading keystrokes) */
+.typed-input {
+  opacity:0; position:absolute; pointer-events:none; height:0; width:0;
+}
+
+/* ── on-screen keyboard ── */
+.keyboard { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.kb-row { display:flex; justify-content:center; gap:5px; }
+.kb-key {
+  font-family:'Fredoka One',cursive;
+  font-size:1.1rem;
+  border:none; cursor:pointer;
+  border-radius:10px;
+  padding:10px 0;
+  width:clamp(28px,8.5vw,42px);
+  color:white;
+  transition:transform .1s,box-shadow .1s,background .8s;
+  -webkit-tap-highlight-color:transparent;
+}
+/* season colours for keys */
+.season-spring .kb-key { background:linear-gradient(135deg,#e060b0,#c03090); box-shadow:0 4px 0 #8a1060; }
+.season-spring .kb-key:active,.season-spring .kb-key.pressed { transform:translateY(3px); box-shadow:0 1px 0 #8a1060; }
+.season-summer .kb-key { background:linear-gradient(135deg,#f5a300,#e08000); box-shadow:0 4px 0 #a05000; }
+.season-summer .kb-key:active,.season-summer .kb-key.pressed { transform:translateY(3px); box-shadow:0 1px 0 #a05000; }
+.season-autumn .kb-key { background:linear-gradient(135deg,#d06010,#a03800); box-shadow:0 4px 0 #702000; }
+.season-autumn .kb-key:active,.season-autumn .kb-key.pressed { transform:translateY(3px); box-shadow:0 1px 0 #702000; }
+.season-winter .kb-key { background:linear-gradient(135deg,#3090d0,#1060a0); box-shadow:0 4px 0 #004080; }
+.season-winter .kb-key:active,.season-winter .kb-key.pressed { transform:translateY(3px); box-shadow:0 1px 0 #004080; }
+
+.kb-key.kb-del {
+  width:clamp(46px,12vw,60px) !important;
+  font-size:.85rem;
+}
+.kb-key.kb-del { background:linear-gradient(135deg,#ff9090,#e06060) !important; box-shadow:0 4px 0 #b03030 !important; }
+.kb-key.kb-del:active { transform:translateY(3px); box-shadow:0 1px 0 #b03030 !important; }
+
+/* ── action row ── */
+.actions { display:flex; gap:10px; }
+.btn-check {
+  flex:1; font-family:'Fredoka One',cursive; font-size:1.25rem;
+  border:none; cursor:pointer; padding:14px; border-radius:16px;
+  background:linear-gradient(135deg,#6bcfb5,#3db899); color:white;
+  box-shadow:0 5px 0 #2a9a7a;
+  transition:transform .1s,box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-check:active { transform:translateY(4px); box-shadow:0 1px 0 #2a9a7a; }
+.btn-check:disabled { opacity:.45; cursor:not-allowed; }
+
+.btn-skip {
+  font-family:'Fredoka One',cursive; font-size:1rem;
+  border:none; cursor:pointer; padding:14px 16px; border-radius:16px;
+  background:linear-gradient(135deg,#e0e0f0,#d0d0e8); color:#8080a8;
+  box-shadow:0 5px 0 #a0a0c0;
+  transition:transform .1s,box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-skip:active { transform:translateY(4px); box-shadow:0 1px 0 #a0a0c0; }
+
+/* ── feedback overlay ── */
+.feedback {
+  position:absolute; inset:0; border-radius:calc(var(--radius-card) - 2px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:'Fredoka One',cursive;
+  opacity:0; pointer-events:none; transition:opacity .22s; z-index:10;
+  padding:18px 20px; gap:6px;
+}
+.feedback.show { opacity:1; pointer-events:all; }
+.feedback.correct { background:rgba(107,207,181,.95); }
+.feedback.wrong   { background:rgba(255,100,100,.93); }
+
+/* correct feedback */
+.fb-emoji { font-size:3.6rem; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); line-height:1; }
+.fb-title {
+  font-size:1.6rem; color:white;
+  text-shadow:2px 2px 0 rgba(0,0,0,.12);
+  text-align:center; line-height:1.2;
+}
+.fb-sub {
+  font-family:'Nunito',sans-serif; font-weight:800;
+  color:rgba(255,255,255,.9); font-size:.9rem;
+}
+
+/* wrong feedback — diff comparison */
+.fb-diff {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  width:100%;
+}
+.fb-diff-row {
+  display:flex; align-items:center; gap:6px; flex-wrap:nowrap;
+  justify-content:center; width:100%;
+}
+.fb-diff-label {
+  font-family:'Nunito',sans-serif; font-size:.75rem; font-weight:800;
+  color:rgba(255,255,255,.8); width:42px; text-align:right;
+  flex-shrink:0; letter-spacing:.3px; text-transform:uppercase;
+}
+.fb-diff-boxes { display:flex; gap:4px; flex-wrap:nowrap; }
+.fb-letter {
+  font-family:'Fredoka One',cursive;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:9px; border:2px solid transparent;
+  flex-shrink:0;
+}
+/* correct row — all green */
+.fb-letter.fb-ok {
+  background:rgba(255,255,255,.95); color:#2a9a7a;
+  border-color:rgba(255,255,255,.6);
+}
+/* wrong row — green if right letter, red-ish if wrong, grey if missing */
+.fb-letter.fb-match   { background:rgba(255,255,255,.95); color:#2a9a7a; border-color:rgba(255,255,255,.6); }
+.fb-letter.fb-mismatch{ background:rgba(255,220,220,.95); color:#cc2020; border-color:#ff9090; animation:shake .35s ease; }
+.fb-letter.fb-missing { background:rgba(255,255,255,.3);  color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.3);
+  font-size:.8em; }
+.fb-try-again {
+  font-family:'Nunito',sans-serif; font-weight:800;
+  color:white; font-size:.95rem; margin-top:2px;
+}
+@keyframes popIn { 0%{transform:scale(0) rotate(-18deg);} 100%{transform:scale(1) rotate(0);} }
+
+/* ── burst stars ── */
+.star-burst {
+  position:fixed; pointer-events:none; z-index:999; font-size:1.8rem;
+  animation:starFly 1.2s ease-out forwards;
+}
+@keyframes starFly {
+  0%  { transform:translate(0,0) scale(0); opacity:1; }
+  60% { opacity:1; }
+  100%{ transform:translate(var(--tx),var(--ty)) scale(1.4); opacity:0; }
+}
+
+/* ── celebration screen ── */
+.celebration {
+  position:fixed; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity .5s;
+  text-align:center; padding:24px;
+}
+.celebration.show { opacity:1; pointer-events:all; }
+.season-spring .celebration { background:linear-gradient(135deg,#f060c0,#c030a0); }
+.season-summer .celebration { background:linear-gradient(135deg,#f5a300,#e06000); }
+.season-autumn .celebration { background:linear-gradient(135deg,#d06010,#802000); }
+.season-winter .celebration { background:linear-gradient(135deg,#2080d0,#0040a0); }
+
+.celeb-icon { font-size:4rem; animation:spinFloat 1.5s ease-in-out infinite alternate; }
+@keyframes spinFloat { 0%{transform:translateY(0) rotate(-10deg);} 100%{transform:translateY(-18px) rotate(10deg);} }
+
+.celeb-title {
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(2rem,7vw,3.6rem);
+  color:var(--yellow); text-shadow:3px 3px 0 rgba(0,0,0,.15);
+  margin:10px 0 8px;
+  animation:zoomPulse .6s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes zoomPulse { 0%{transform:scale(0);} 100%{transform:scale(1);} }
+
+.celeb-score {
+  font-family:'Fredoka One',cursive; font-size:1.5rem;
+  color:white; margin-bottom:6px;
+}
+.celeb-msg { font-size:1rem; color:rgba(255,255,255,.9); font-weight:700; margin-bottom:24px; }
+
+/* missed words list */
+.missed-list {
+  background:rgba(255,255,255,.2); border-radius:14px;
+  padding:10px 18px; margin-bottom:20px;
+  max-width:320px; width:100%;
+  text-align:left;
+}
+.missed-list h3 { font-family:'Fredoka One',cursive; color:white; font-size:1rem; margin-bottom:6px; }
+.missed-list li { color:rgba(255,255,255,.9); font-size:.9rem; font-weight:700; line-height:1.7; list-style:none; }
+.missed-list li::before { content:"✏️  "; }
+
+.btn-play-again {
+  font-family:'Fredoka One',cursive; font-size:1.3rem;
+  border:none; cursor:pointer;
+  padding:15px 34px; border-radius:26px;
+  background:var(--yellow); color:var(--dark);
+  box-shadow:0 6px 0 #c9a200;
+  transition:transform .1s,box-shadow .1s;
+  animation:bounceIn .5s .4s both;
+  margin-bottom:10px;
+}
+.btn-play-again:active { transform:translateY(5px); box-shadow:0 1px 0 #c9a200; }
+
+.btn-retry-missed {
+  font-family:'Fredoka One',cursive; font-size:1rem;
+  border:none; cursor:pointer;
+  padding:11px 24px; border-radius:20px;
+  background:rgba(255,255,255,.25); color:white;
+  border:2px solid rgba(255,255,255,.5);
+  transition:background .2s;
+}
+.btn-retry-missed:hover { background:rgba(255,255,255,.35); }
+
+/* confetti */
+.confetti-piece {
+  position:fixed; pointer-events:none; z-index:101; border-radius:2px;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform:translateY(-10px) rotate(0deg);    opacity:1; }
+  100% { transform:translateY(110vh) rotate(720deg);  opacity:.4; }
+}
+
+/* ── word definition (shown always) ── */
+.word-definition {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:#fafafa; border-radius:14px; padding:9px 14px;
+  margin-bottom:14px; border:2px solid #f0e8ff;
+}
+.word-def-emoji { font-size:2rem; line-height:1; flex-shrink:0; }
+.word-def-text  { font-size:.95rem; font-weight:700; color:#6040a0; text-align:left; }
+
+/* ── try again button inside feedback overlay ── */
+.btn-try-again {
+  font-family:'Fredoka One',cursive; font-size:1.2rem;
+  border:none; cursor:pointer;
+  padding:12px 28px; border-radius:18px;
+  background:white; color:#cc2020;
+  box-shadow:0 4px 0 rgba(0,0,0,.15);
+  margin-top:8px;
+  transition:transform .1s, box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-try-again:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.15); }
+
+/* ── TTS unavailable warning ── */
+.tts-warn {
+  background:#fff3cd; border:2px solid var(--yellow);
+  border-radius:12px; padding:8px 14px;
+  font-size:.85rem; font-weight:700; color:#856404;
+  text-align:center; max-width:480px; width:100%;
+  display:none;
+}
+.tts-warn.visible { display:block; }
+
+@media(max-width:380px){
+  .card { padding:18px 12px; }
+  .kb-key { font-size:.95rem; }
+}
+
+/* ── start screen ── */
+.start-screen {
+  position:fixed; inset:0; z-index:200;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:28px;
+  transition:opacity .5s, transform .5s;
+}
+.start-screen.hidden {
+  opacity:0; pointer-events:none; transform:scale(1.04);
+}
+.season-spring .start-screen { background:linear-gradient(160deg,#fff0f8 0%,#e8faf0 55%,#fffbe8 100%); }
+.season-summer .start-screen { background:linear-gradient(160deg,#fffbe0 0%,#d0f4ff 55%,#fff0c8 100%); }
+.season-autumn .start-screen { background:linear-gradient(160deg,#fff3e0 0%,#ffe0b0 45%,#ffd0c0 100%); }
+.season-winter .start-screen { background:linear-gradient(160deg,#e8f4ff 0%,#d8eeff 55%,#f0f8ff 100%); }
+
+.start-icon {
+  font-size:5rem; line-height:1;
+  animation:bounceIn .7s cubic-bezier(.34,1.56,.64,1) both;
+  margin-bottom:8px;
+}
+.start-title {
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(2rem,6vw,3rem);
+  color:var(--dark); margin-bottom:4px;
+  animation:bounceIn .7s .1s cubic-bezier(.34,1.56,.64,1) both;
+}
+.season-spring .start-title { text-shadow:3px 3px 0 #ff9de2; }
+.season-summer .start-title { text-shadow:3px 3px 0 #ffcc00; }
+.season-autumn .start-title { text-shadow:3px 3px 0 #ff8c00; }
+.season-winter .start-title { text-shadow:3px 3px 0 #74c7f0; }
+
+.start-word-count {
+  font-size:1.1rem; font-weight:800; margin-bottom:28px;
+  animation:bounceIn .7s .2s cubic-bezier(.34,1.56,.64,1) both;
+  transition:color .8s;
+}
+.season-spring .start-word-count { color:#c060a0; }
+.season-summer .start-word-count { color:#c08000; }
+.season-autumn .start-word-count { color:#a04000; }
+.season-winter .start-word-count { color:#2060a0; }
+
+.start-word-preview {
+  display:flex; flex-wrap:wrap; gap:8px;
+  justify-content:center; max-width:340px;
+  margin-bottom:32px;
+  animation:bounceIn .7s .25s cubic-bezier(.34,1.56,.64,1) both;
+}
+.preview-pill {
+  font-family:'Fredoka One',cursive; font-size:1rem;
+  padding:5px 14px; border-radius:20px;
+  color:white;
+  transition:background .8s;
+}
+.season-spring .preview-pill { background:linear-gradient(135deg,#e060b0,#c03090); }
+.season-summer .preview-pill { background:linear-gradient(135deg,#f5a300,#e08000); }
+.season-autumn .preview-pill { background:linear-gradient(135deg,#d06010,#a03800); }
+.season-winter .preview-pill { background:linear-gradient(135deg,#3090d0,#1060a0); }
+
+.btn-start {
+  font-family:'Fredoka One',cursive; font-size:1.6rem;
+  border:none; cursor:pointer;
+  padding:18px 48px; border-radius:30px;
+  background:var(--yellow); color:var(--dark);
+  box-shadow:0 7px 0 #c9a200;
+  transition:transform .1s, box-shadow .1s;
+  animation:bounceIn .7s .35s cubic-bezier(.34,1.56,.64,1) both;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-start:active { transform:translateY(6px); box-shadow:0 1px 0 #c9a200; }
+</style>
+</head>
+<body>
+<!-- ── start screen ── -->
+<div class="start-screen" id="start-screen">
+  <div class="start-icon" id="start-icon">🌸</div>
+  <div class="start-title">Ludovica's<br>Spelling Challenge!</div>
+  <div class="start-word-count" id="start-word-count">8 words this week</div>
+  <div class="start-word-preview" id="start-word-preview"></div>
+  <button class="btn-start" onclick="startGame()">Let's Go! 🔊</button>
+</div>
+
+<div id="particles"></div>
+
+<div class="container">
+  <header>
+    <div class="hd-icon" id="hd-icon">🌸</div>
+    <h1>Ludovica's Spelling Challenge!</h1>
+    <div class="hd-sub" id="hd-sub">This week's words 📚</div>
+  </header>
+
+  <div class="tts-warn" id="tts-warn">
+    ⚠️ Text-to-speech isn't available in this browser. Try Chrome or Safari!
+  </div>
+
+  <div class="progress-strip">
+    <div class="strip-top">
+      <span class="strip-label" id="strip-label">Word 1 of 8</span>
+      <span class="score-pill">⭐ <span id="score-count">0</span></span>
+    </div>
+    <div class="stars-row" id="stars-row"></div>
+    <div class="streak-pill" id="streak-pill"></div>
+  </div>
+
+  <div class="card" id="main-card">
+    <div class="word-counter" id="word-counter">WORD 1 OF 8</div>
+
+    <!-- emoji + definition shown for every word -->
+    <div class="word-definition" id="word-definition">
+      <div class="word-def-emoji" id="word-def-emoji">⭐</div>
+      <div class="word-def-text"  id="word-def-text">Listen carefully!</div>
+    </div>
+
+    <div class="listen-area">
+      <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
+      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
+    </div>
+
+    <div class="hint-box" id="hint-box" style="display:none"></div>
+
+    <div class="spelling-display" id="spelling-display"></div>
+
+    <!-- hidden input for physical keyboard — readonly stops mobile keyboard popping up -->
+    <input class="typed-input" id="typed-input" autocomplete="off" autocorrect="off"
+           autocapitalize="off" spellcheck="false" aria-hidden="true" readonly>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    <div class="actions">
+      <button class="btn-skip" onclick="skipWord()">⏭ Skip</button>
+      <button class="btn-check" id="btn-check" onclick="checkSpelling()">✅ Check!</button>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <div class="fb-emoji" id="fb-emoji">🎉</div>
+      <div class="fb-title" id="fb-title">Amazing!</div>
+      <div class="fb-sub"   id="fb-sub"></div>
+      <div class="fb-diff"  id="fb-diff" style="display:none"></div>
+      <button class="btn-try-again" id="btn-try-again" onclick="tryAgain()" style="display:none">👂 Try Again!</button>
+    </div>
+  </div>
+</div>
+
+<!-- celebration -->
+<div class="celebration" id="celebration">
+  <div class="celeb-icon" id="celeb-icon">🌟</div>
+  <div class="celeb-title" id="celeb-title">ALL DONE!</div>
+  <div class="celeb-score" id="celeb-score">8 / 8 ⭐</div>
+  <div class="celeb-score" id="celeb-hints" style="font-size:1.1rem;opacity:.85">💡 0 hints used</div>
+  <div class="celeb-msg"   id="celeb-msg">You're a spelling superstar!</div>
+  <div class="missed-list" id="missed-list" style="display:none">
+    <h3>Practice these again:</h3>
+    <ul id="missed-ul"></ul>
+  </div>
+  <button class="btn-play-again" onclick="playAgain()">Play Again! 🎮</button>
+  <button class="btn-retry-missed" id="btn-retry" onclick="retryMissed()" style="display:none">
+    Practice missed words ✏️
+  </button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  SEASON CONFIG
+// ══════════════════════════════════════════════════════
+const SEASONS = {
+  spring: {
+    icon:'🌸', sub:'This week\'s words 📚',
+    particles:['🌸','🌼','🌷','🦋','🐝','🌱','🍀'],
+    chars:['🐣','🦋','🌸','🐰','🌷','🐥','🌼','🐸'],
+    fireworks:['🌸','🌼','💐','✨','🌷','🦋','⭐'],
+  },
+  summer: {
+    icon:'☀️', sub:'This week\'s words 📚',
+    particles:['☀️','🌻','🏖️','🌊','🍦','🐚','🌴'],
+    chars:['🦀','🐠','🌻','🏄','🌺','🦜','🐙','🍉'],
+    fireworks:['☀️','🌻','⭐','✨','🌊','🍦','💛'],
+  },
+  autumn: {
+    icon:'🍂', sub:'This week\'s words 📚',
+    particles:['🍂','🍁','🎃','🌰','🍄','🦔','🍎'],
+    chars:['🦔','🍁','🎃','🦉','🌰','🐿️','🍂','🦊'],
+    fireworks:['🍁','🍂','⭐','✨','🎃','🌰','🔥'],
+  },
+  winter: {
+    icon:'❄️', sub:'This week\'s words 📚',
+    particles:['❄️','⛄','🌨️','🎿','🧊','🦌','🎁'],
+    chars:['⛄','🦌','🐧','🎿','🧊','❄️','🎁','🦉'],
+    fireworks:['❄️','⛄','⭐','✨','🎁','🌟','💙'],
+  },
+};
+
+const PROMPTS_RIGHT = [
+  'Woohoo! Correct!',
+  'Brilliant spelling!',
+  'You got it!',
+  'Fantastic, Ludovica!',
+  'YES! Perfect!',
+  'Superstar speller!',
+  'Incredible!',
+  'Nailed it!',
+  'Got it this time!',
+];
+const PROMPTS_WRONG = [
+  'Not quite, listen again!',
+  'Almost! Try again!',
+  'Keep trying!',
+  'You are so close!',
+  'Listen carefully!',
+];
+const STREAK_MSGS = ['','','2 in a row! 🔥','3 in a row! 🚀','4 in a row! ⚡',
+  '5 in a row! 🌟','6 in a row! 💥','7 in a row! 🏆','8 in a row! 👑'];
+
+  const KB_ROWS = [
+  ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'],
+  ['j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r'],
+  ['s', 't', 'u', 'v', 'w', 'x', 'y', 'z', '⌫'],
+];
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let words = [];          // current word list (objects)
+let wordIdx   = 0;
+let score     = 0;
+let streak    = 0;
+let typed     = '';
+let firstTry  = true;    // whether current word still on first attempt
+let missed    = [];      // words got wrong
+let hints     = 0;       // total hints used this session
+let feedbackTimer = null;
+let currentSeason = 'spring';
+
+// ══════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════
+function init() {
+  if (typeof SPELLING_WORDS === 'undefined' || !SPELLING_WORDS.length) {
+    alert('⚠️  No words found! Make sure words.js is in the same folder as index.html.');
+    return;
+  }
+  words = shuffle([...SPELLING_WORDS]);
+
+  const season = (typeof SEASON !== 'undefined' && SEASONS[SEASON]) ? SEASON : 'spring';
+  currentSeason = season;
+  applySeason(season);
+  buildKeyboard();
+  buildStars();
+  checkTTS();
+
+  wordIdx = 0; score = 0; streak = 0; missed = []; hints = 0;
+  updateScore();
+
+  // Populate start screen
+  const S = SEASONS[season];
+  document.getElementById('start-icon').textContent = S.icon;
+  document.getElementById('start-word-count').textContent =
+    `${words.length} word${words.length !== 1 ? 's' : ''} this week`;
+  const preview = document.getElementById('start-word-preview');
+  preview.innerHTML = '';
+  words.forEach(w => {
+    const pill = document.createElement('div');
+    pill.className = 'preview-pill';
+    pill.innerHTML = `${w.emoji || '⭐'} <span style="margin-left:8px">${w.word}</span>`;
+    preview.appendChild(pill);
+  });
+}
+
+function startGame() {
+  // This tap is the user gesture browsers require before allowing audio
+  document.getElementById('start-screen').classList.add('hidden');
+  showWord(); // showWord calls speakWord internally
+}
+
+function applySeason(s) {
+  document.body.className = 'season-' + s;
+  const S = SEASONS[s];
+  document.getElementById('hd-icon').textContent = S.icon;
+  document.getElementById('hd-sub').textContent  = S.sub;
+  buildParticles(S.particles);
+}
+
+function checkTTS() {
+  if (!window.speechSynthesis) {
+    document.getElementById('tts-warn').classList.add('visible');
+    document.getElementById('btn-listen').style.opacity = '0.4';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════════════
+function buildParticles(emojis) {
+  const el = document.getElementById('particles');
+  el.innerHTML = '';
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.cssText = `left:${Math.random()*100}%;font-size:${.9+Math.random()*1.1}rem;`
+      + `animation-duration:${10+Math.random()*13}s;animation-delay:${-Math.random()*20}s;`;
+    el.appendChild(p);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  KEYBOARD
+// ══════════════════════════════════════════════════════
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  KB_ROWS.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'kb-row';
+    row.forEach(k => {
+      const btn = document.createElement('button');
+      btn.className = 'kb-key' + (k === '⌫' ? ' kb-del' : '');
+      btn.textContent = k;
+      btn.dataset.key = k;
+      btn.addEventListener('pointerdown', e => { e.preventDefault(); handleKey(k); });
+      rowEl.appendChild(btn);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  STARS STRIP
+// ══════════════════════════════════════════════════════
+function buildStars() {
+  const row = document.getElementById('stars-row');
+  row.innerHTML = '';
+  const icon = SEASONS[currentSeason].particles[0];
+  words.forEach((_, i) => {
+    const s = document.createElement('span');
+    s.className = 's-icon'; s.textContent = icon; s.id = `si-${i}`;
+    row.appendChild(s);
+  });
+}
+
+function earnStar(i) {
+  const s = document.getElementById(`si-${i}`);
+  if (s) s.classList.add('lit');
+}
+
+// ══════════════════════════════════════════════════════
+//  SHOW WORD
+// ══════════════════════════════════════════════════════
+function showWord() {
+  if (wordIdx >= words.length) { celebrate(); return; }
+
+  const w = words[wordIdx];
+  typed = '';
+  firstTry = true;
+  hideFeedback();
+
+  // counter
+  document.getElementById('word-counter').textContent =
+    `WORD ${wordIdx+1} OF ${words.length}`;
+  document.getElementById('strip-label').textContent =
+    `Word ${wordIdx+1} of ${words.length}`;
+
+  // show emoji + definition
+  document.getElementById('word-def-emoji').textContent = w.emoji || '⭐';
+  document.getElementById('word-def-text').textContent  = w.hint  || 'Listen carefully!';
+
+  // hide hint box
+  document.getElementById('hint-box').style.display = 'none';
+  document.getElementById('hint-box').textContent = '';
+
+  renderBoxes();
+  updateScore();
+
+  // speak after a short delay so the card animation settles
+  setTimeout(speakWord, 500);
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER LETTER BOXES
+// ══════════════════════════════════════════════════════
+
+function calcBoxSize(letterCount) {
+  // Available width = card width minus padding (28px each side)
+  const card = document.getElementById('main-card');
+  const available = (card ? card.clientWidth : 320) - 56;
+  const gap = 4;
+  const totalGaps = (letterCount - 1) * gap;
+  // Max box size we'd ever want
+  const maxBox  = 56;
+  const maxFont = 2.0;
+  // Shrink to fit
+  const rawBox  = Math.floor((available - totalGaps) / letterCount);
+  const boxSize = Math.min(rawBox, maxBox);
+  // Font scales proportionally, capped
+  const fontSize = Math.min((boxSize / maxBox) * maxFont, maxFont);
+  const height   = Math.round(boxSize * 1.12);
+  return { boxSize, fontSize, height };
+}
+
+function renderBoxes(state) {
+  const word = words[wordIdx].word.toLowerCase();
+  const disp = document.getElementById('spelling-display');
+  disp.innerHTML = '';
+
+  // Use the length of what is actually typed to decide how many boxes to show
+  // We add +1 if the word isn't finished to show the 'cursor' box
+  const displayLength = state === 'correct' ? word.length : Math.min(typed.length + 1, word.length);
+  const { boxSize, fontSize, height } = calcBoxSize(word.length);
+
+  for (let i = 0; i < displayLength; i++) {
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    box.style.width    = boxSize + 'px';
+    box.style.height   = height + 'px';
+    box.style.fontSize = fontSize + 'rem';
+
+    if (state === 'correct') {
+      box.classList.add('correct');
+      box.textContent = word[i].toUpperCase();
+    } else if (state === 'wrong') {
+      if (i < typed.length) {
+        const ok = typed[i] === word[i];
+        box.classList.add(ok ? 'correct' : 'wrong');
+        box.textContent = typed[i].toUpperCase();
+      }
+    } else {
+      if (i < typed.length) {
+        box.classList.add('filled');
+        box.textContent = typed[i].toUpperCase();
+      } else if (i === typed.length && typed.length < word.length) {
+        // This is the "next" empty box waiting for a letter
+        box.classList.add('cursor');
+      }
+    }
+    disp.appendChild(box);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  KEY HANDLING
+// ══════════════════════════════════════════════════════
+function handleKey(k) {
+  if (document.getElementById('feedback').classList.contains('show')) return;
+  const word = words[wordIdx].word.toLowerCase();
+
+  if (k === '⌫') {
+    if (typed.length > 0) typed = typed.slice(0, -1);
+  } else if (typed.length < word.length) {
+    typed += k.toLowerCase();
+  }
+
+  renderBoxes();
+
+  // flash key
+  document.querySelectorAll(`.kb-key`).forEach(b => {
+    if (b.dataset.key === k) {
+      b.classList.add('pressed');
+      setTimeout(() => b.classList.remove('pressed'), 140);
+    }
+  });
+}
+
+// physical keyboard — listen on document so no focus needed
+document.addEventListener('keydown', e => {
+  if (e.key === 'Backspace')           { e.preventDefault(); handleKey('⌫'); }
+  else if (e.key === 'Enter')          { e.preventDefault(); checkSpelling(); }
+  else if (/^[a-zA-Z]$/.test(e.key))  { handleKey(e.key.toLowerCase()); }
+});
+
+// ══════════════════════════════════════════════════════
+//  HINT — shows correct spelling briefly, tracks usage
+// ══════════════════════════════════════════════════════
+function useHint() {
+  const box = document.getElementById('hint-box');
+  const w   = words[wordIdx];
+
+  hints++;  // count every press
+
+  box.innerHTML = `<strong style="font-size:1.5rem;color:#a259ff;letter-spacing:3px;">${w.word.toUpperCase()}</strong>`;
+  box.style.display = 'block';
+  box.classList.remove('hint-flash');
+  void box.offsetWidth; // force reflow to restart animation
+  box.classList.add('hint-flash');
+
+  clearTimeout(box._hideTimer);
+  box._hideTimer = setTimeout(() => {
+    box.style.display = 'none';
+    box.classList.remove('hint-flash');
+  }, 2000);
+}
+
+// ══════════════════════════════════════════════════════
+//  AUDIO — file-first, Web Speech API fallback
+// ══════════════════════════════════════════════════════
+
+const _audioCache = {};  // word -> url string (exists) | false (no file)
+let   _currentAudio = null;
+
+function _audioFilename(word) {
+  return 'audio/' + word.toLowerCase().replace(/ /g, '_');
+}
+
+// Check if an audio file exists for this word (mp3 then aiff)
+function _probeAudio(word) {
+  if (_audioCache[word] !== undefined)
+    return Promise.resolve(_audioCache[word] || null);
+  const urls = [_audioFilename(word) + '.mp3', _audioFilename(word) + '.aiff'];
+  function tryNext(i) {
+    if (i >= urls.length) { _audioCache[word] = false; return Promise.resolve(null); }
+    return fetch(urls[i], { method: 'GET' })
+      .then(r => { if (r.ok) { _audioCache[word] = urls[i]; return urls[i]; } return tryNext(i+1); })
+      .catch(() => tryNext(i+1));
+  }
+  return tryNext(0);
+}
+
+function _stopAudio() {
+  if (_currentAudio) { _currentAudio.pause(); _currentAudio.currentTime = 0; _currentAudio = null; }
+}
+
+// ── Web Speech API (fallback) ─────────────────────────
+
+let _voicePollTimer = null;
+function _ensureVoices() {
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) {
+    clearInterval(_voicePollTimer);
+    console.log('🎙 Best TTS voice:', getBestVoice()?.name ?? 'none');
+  }
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = _ensureVoices;
+  _voicePollTimer = setInterval(_ensureVoices, 200);
+  setTimeout(() => clearInterval(_voicePollTimer), 5000);
+  _ensureVoices();
+}
+
+function getBestVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+               || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+               || (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
+  if (isApple) {
+    const serena  = voices.find(v => v.name.includes('Serena') && v.localService);
+    if (serena) return serena;
+    const enhGB   = voices.find(v => v.lang === 'en-GB' && v.localService &&
+                      (v.name.includes('Enhanced') || v.name.includes('Premium')));
+    if (enhGB) return enhGB;
+    const daniel  = voices.find(v => v.name.includes('Daniel') && v.localService);
+    if (daniel) return daniel;
+    const localGB = voices.find(v => v.lang === 'en-GB' && v.localService);
+    if (localGB) return localGB;
+    const sam     = voices.find(v => v.name === 'Samantha');
+    if (sam) return sam;
+  } else {
+    const preferred = ['Google UK English Female','Google UK English Male',
+      'Microsoft Libby Online (Natural)','Microsoft Mia Online (Natural)',
+      'Microsoft Ryan Online (Natural)','Daniel'];
+    for (const name of preferred) {
+      const m = voices.find(v => v.name === name);
+      if (m) return m;
+    }
+  }
+  return voices.find(v => v.lang === 'en-GB')
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0] || null;
+}
+
+function _speakTTS(text, rate, pitch) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  function doSpeak() {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) {
+      window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; doSpeak(); };
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(text);
+    const voice = getBestVoice();
+    if (voice) utter.voice = voice;
+    utter.rate = rate; utter.pitch = pitch; utter.lang = 'en-GB';
+    window.speechSynthesis.speak(utter);
+  }
+  setTimeout(doSpeak, 50);
+}
+
+// ── Main speak functions ──────────────────────────────
+
+function speakWord() {
+  _stopAudio();
+  const word = words[wordIdx].word;
+  const btn  = document.getElementById('btn-listen');
+  const ind  = document.getElementById('voice-indicator');
+
+  _probeAudio(word).then(url => {
+    if (url) {
+      if (ind) ind.textContent = '🔊 audio file';
+      const audio = new Audio(url);
+      audio.playbackRate = 0.92;
+      _currentAudio = audio;
+      btn.classList.add('speaking');
+      audio.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
+      audio.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _speakTTS(word, 0.82, 1.1); };
+      audio.play().catch(() => _speakTTS(word, 0.82, 1.1));
+    } else {
+      if (ind) ind.textContent = '🎙 ' + (getBestVoice()?.name ?? 'TTS default');
+      btn.classList.add('speaking');
+      _speakTTS(word, 0.82, 1.1);
+      setTimeout(() => btn.classList.remove('speaking'), 3000);
+    }
+  });
+}
+
+// Speak encouragement after correct answer.
+// On the last word, also speaks the definition.
+function speakEncouragement(msg, definitionSuffix) {
+  _stopAudio();
+  if (!window.speechSynthesis && !window.Audio) return;
+
+  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  const cleanMsg = stripEmoji(msg);
+
+  // Build the encouragement audio filename the same way the shell script does:
+  // lowercase, strip punctuation, spaces to underscores
+  const encFilename = 'audio/encouragement/' +
+    cleanMsg.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
+
+  function playDefinition() {
+    // After encouragement, speak the definition on the last word via TTS
+    if (definitionSuffix) {
+      setTimeout(() => _speakTTS(stripEmoji(definitionSuffix), 0.88, 1.1), 300);
+    }
+  }
+
+  // Try mp3 then aiff
+  const urls = [encFilename + '.mp3', encFilename + '.aiff'];
+  function tryUrl(i) {
+    if (i >= urls.length) {
+      // No file found — fall back to TTS for the whole thing
+      let text = cleanMsg;
+      if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
+      setTimeout(() => _speakTTS(text, 0.92, 1.15), 200);
+      return;
+    }
+    fetch(urls[i], { method: 'GET' })
+      .then(r => {
+        if (r.ok) {
+          const audio = new Audio(urls[i]);
+          audio.playbackRate = 1.0;
+          _currentAudio = audio;
+          audio.onended = () => { _currentAudio = null; playDefinition(); };
+          audio.onerror = () => { _currentAudio = null; tryUrl(i + 1); };
+          setTimeout(() => audio.play().catch(() => tryUrl(i + 1)), 200);
+        } else {
+          tryUrl(i + 1);
+        }
+      })
+      .catch(() => tryUrl(i + 1));
+  }
+  tryUrl(0);
+}
+
+// ══════════════════════════════════════════════════════
+//  CHECK
+// ══════════════════════════════════════════════════════
+function checkSpelling() {
+  if (document.getElementById('feedback').classList.contains('show')) return;
+  const word = words[wordIdx].word.toLowerCase();
+  if (typed.length === 0) { speakWord(); return; }
+
+  // pad typed if shorter
+  const attempt = typed.padEnd(word.length, ' ').slice(0, word.length);
+  const correct = attempt === word;
+
+  if (correct) {
+    renderBoxes('correct');
+    if (firstTry) { score++; streak++; earnStar(wordIdx); }
+    else          { streak = 0; }
+    updateScore(); updateStreak();
+    const msg = firstTry
+      ? PROMPTS_RIGHT[Math.floor(Math.random()*PROMPTS_RIGHT.length)]
+      : 'Got it this time! 💪';
+    const isLastWord = (wordIdx === words.length - 1);
+    showFeedback(true, word, msg, typed);
+    firework();
+
+    if (isLastWord) {
+      // On the final word, speak encouragement then the emoji title
+      const w = words[wordIdx];
+      speakEncouragement(msg, w.hint || '');
+    } else {
+      speakEncouragement(msg, '');
+    }
+
+    wordIdx++;
+    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2200);
+  } else {
+    renderBoxes('wrong');
+    streak = 0; updateStreak();
+    if (firstTry) missed.push(words[wordIdx]);
+    firstTry = false;
+    const msg = PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)];
+    showFeedback(false, word, msg, typed);
+    speakWord();
+    // No timer — user must press Try Again button
+  }
+}
+
+function tryAgain() {
+  if (feedbackTimer) clearTimeout(feedbackTimer);
+  hideFeedback();
+  typed = '';
+  renderBoxes();
+}
+
+function skipWord() {
+  if (feedbackTimer) clearTimeout(feedbackTimer);
+  hideFeedback();
+  if (firstTry) missed.push(words[wordIdx]);
+  streak = 0; updateStreak();
+  wordIdx++;
+  typed = '';
+  showWord();
+}
+
+// ══════════════════════════════════════════════════════
+//  FEEDBACK OVERLAY
+// ══════════════════════════════════════════════════════
+function showFeedback(ok, correctWord, msg, typedAttempt) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (ok ? 'correct' : 'wrong');
+
+  const emojiEl = document.getElementById('fb-emoji');
+  const titleEl = document.getElementById('fb-title');
+  const subEl   = document.getElementById('fb-sub');
+  const diffEl  = document.getElementById('fb-diff');
+
+  const tryBtn = document.getElementById('btn-try-again');
+
+  if (ok) {
+    emojiEl.style.display = '';
+    emojiEl.textContent = ['🎉','🥳','⭐','🌟','🏆','💫','✨','🎊'][Math.floor(Math.random()*8)];
+    titleEl.textContent = msg;
+    subEl.textContent   = '✅ ' + correctWord.toUpperCase();
+    subEl.style.display = '';
+    diffEl.style.display = 'none';
+    tryBtn.style.display = 'none';
+  } else {
+    emojiEl.style.display = 'none';
+    titleEl.textContent  = msg;
+    subEl.style.display  = 'none';
+    diffEl.style.display = '';
+    diffEl.innerHTML     = '';
+    tryBtn.style.display = '';
+
+    // Work out dynamic box size so diff fits on one line
+    const card      = document.getElementById('main-card');
+    const available = (card ? card.clientWidth : 320) - 56;
+    const maxBox    = 38;
+    const gap       = 4;
+    const labelW    = 48; // label + gap
+    const boxCount  = correctWord.length;
+    const rawBox    = Math.floor((available - labelW - (boxCount - 1) * gap) / boxCount);
+    const bx        = Math.min(rawBox, maxBox);
+    const fs        = Math.max(0.7, Math.min(1.1, bx / 34)) + 'rem';
+
+    function makeRow(label, letters, styleClass) {
+      const row = document.createElement('div');
+      row.className = 'fb-diff-row';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'fb-diff-label';
+      lbl.textContent = label;
+      row.appendChild(lbl);
+
+      const boxes = document.createElement('div');
+      boxes.className = 'fb-diff-boxes';
+      letters.forEach(({ch, cls}) => {
+        const b = document.createElement('div');
+        b.className = 'fb-letter ' + cls;
+        b.style.width    = bx + 'px';
+        b.style.height   = Math.round(bx * 1.15) + 'px';
+        b.style.fontSize = fs;
+        b.textContent    = ch;
+        boxes.appendChild(b);
+      });
+      row.appendChild(boxes);
+      return row;
+    }
+
+    // Correct row — all green
+    const correctLetters = correctWord.split('').map(ch => ({ ch: ch.toUpperCase(), cls: 'fb-ok' }));
+    diffEl.appendChild(makeRow('Correct', correctLetters));
+
+    // Your row — green where right, red where wrong, faded where missing
+    const attempt = (typedAttempt || '').toLowerCase();
+    const yourLetters = correctWord.split('').map((ch, i) => {
+      if (i >= attempt.length) return { ch: '?', cls: 'fb-missing' };
+      return attempt[i] === ch
+        ? { ch: attempt[i].toUpperCase(), cls: 'fb-match' }
+        : { ch: attempt[i].toUpperCase(), cls: 'fb-mismatch' };
+    });
+    diffEl.appendChild(makeRow('Yours', yourLetters));
+  }
+}
+
+function hideFeedback() {
+  document.getElementById('feedback').classList.remove('show');
+  document.getElementById('fb-sub').style.display = '';
+}
+
+// ══════════════════════════════════════════════════════
+//  SCORE
+// ══════════════════════════════════════════════════════
+function updateScore() {
+  document.getElementById('score-count').textContent = score;
+}
+function updateStreak() {
+  const p = document.getElementById('streak-pill');
+  if (streak >= 2 && STREAK_MSGS[Math.min(streak, STREAK_MSGS.length-1)]) {
+    p.textContent = STREAK_MSGS[Math.min(streak, STREAK_MSGS.length-1)];
+    p.classList.add('show');
+  } else {
+    p.classList.remove('show');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  FIREWORK
+// ══════════════════════════════════════════════════════
+function firework() {
+  const emojis = SEASONS[currentSeason].fireworks;
+  const cx = window.innerWidth/2, cy = window.innerHeight/2;
+  for (let i = 0; i < 9; i++) {
+    const el = document.createElement('div');
+    el.className = 'star-burst';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    const angle = (i/9)*2*Math.PI, dist = 100+Math.random()*110;
+    el.style.left = cx+'px'; el.style.top = cy+'px';
+    el.style.setProperty('--tx', Math.cos(angle)*dist+'px');
+    el.style.setProperty('--ty', Math.sin(angle)*dist+'px');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  CELEBRATION
+// ══════════════════════════════════════════════════════
+function celebrate() {
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+
+  const total = words.length;
+  const pct   = Math.round(score/total*100);
+  const perfect = score === total && hints === 0;
+
+  document.getElementById('celeb-icon').textContent =
+    perfect ? '👑' : pct === 100 ? '🌟' : pct >= 70 ? '🌟' : '💪';
+  document.getElementById('celeb-title').textContent =
+    perfect ? '🎆 PERFECT! 🎆' : pct === 100 ? 'All correct! 🌟' : pct >= 70 ? 'Great Job! 🌟' : 'Keep Practising! 💪';
+  document.getElementById('celeb-score').textContent =
+    `${score} / ${total} correct ⭐`;
+  document.getElementById('celeb-hints').textContent =
+    hints === 0 ? '💡 No hints used — amazing!' : `💡 ${hints} hint${hints !== 1 ? 's' : ''} used`;
+
+  let mainMsg = '';
+  if (perfect) {
+    mainMsg = 'Ludovica, you spelled every word right with no hints! You\'re incredible! 👑';
+  } else if (pct === 100) {
+    mainMsg = `Well done, Ludovica! All ${total} words correct! Next time try with no hints! 💡`;
+  } else {
+    mainMsg = `Well done, Ludovica! You got ${score} out of ${total}!`;
+  }
+
+  const aimMsg = perfect ? '' : ' Next time, aim for ' + total + '/' + total + ' with no hints! 🎯';
+  document.getElementById('celeb-msg').textContent = mainMsg + aimMsg;
+
+  // missed words
+  const uniqueMissed = [...new Set(missed.map(w => w.word))];
+  if (uniqueMissed.length > 0) {
+    document.getElementById('missed-list').style.display = 'block';
+    const ul = document.getElementById('missed-ul');
+    ul.innerHTML = uniqueMissed.map(w => `<li>${w}</li>`).join('');
+    document.getElementById('btn-retry').style.display = 'inline-block';
+  } else {
+    document.getElementById('missed-list').style.display = 'none';
+    document.getElementById('btn-retry').style.display = 'none';
+  }
+}
+
+function launchConfetti() {
+  const colors=['#FF6EB4','#A259FF','#FFD93D','#6BCFB5','#74C7F0','#FF7F7F','#ffffff'];
+  for(let i=0;i<90;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${2+Math.random()*3}s;animation-delay:${Math.random()*2}s;width:${6+Math.random()*10}px;height:${6+Math.random()*10}px;border-radius:${Math.random()>.5?'50%':'3px'};`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),5500);
+  }
+}
+
+function playAgain() {
+  document.getElementById('celebration').classList.remove('show');
+  words = shuffle([...SPELLING_WORDS]);
+  wordIdx=0; score=0; streak=0; missed=[]; hints=0;
+  buildStars(); updateScore(); updateStreak();
+  // Show start screen again (re-populates preview with new shuffle)
+  const preview = document.getElementById('start-word-preview');
+  preview.innerHTML = '';
+  words.forEach(w => {
+    const pill = document.createElement('div');
+    pill.className = 'preview-pill';
+    pill.innerHTML = `${w.emoji || '⭐'} <span style="margin-left:8px">${w.word}</span>`;
+    preview.appendChild(pill);
+  });
+  document.getElementById('start-screen').classList.remove('hidden');
+}
+
+function retryMissed() {
+  document.getElementById('celebration').classList.remove('show');
+  const uniqueMissed = [...new Set(missed.map(w => w.word))];
+  words = shuffle(SPELLING_WORDS.filter(w => uniqueMissed.includes(w.word)));
+  wordIdx=0; score=0; streak=0; missed=[]; hints=0;
+  buildStars(); updateScore(); updateStreak();
+  showWord();
+}
+
+// ══════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+// Recalculate box sizes if window is resized
+window.addEventListener('resize', () => { if (words.length) renderBoxes(); });
+
+// ── go! ──
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
