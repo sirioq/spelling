@@ -39,6 +39,8 @@ PROMPTS_RIGHT=(
   "Incredible!"
   "Nailed it!"
   "Got it this time!"
+  "Ludovica, you are amazing!"
+  "Good job!"
 )
 PROMPTS_WRONG=(
   "Not quite, listen again!"
