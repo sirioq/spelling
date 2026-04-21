@@ -24,6 +24,8 @@ You can also change the season theme at the bottom of `words.js`:
 ```js
 const SEASON = "spring"; // "spring" | "summer" | "autumn" | "winter"
 ```
+
+UPDATE FROM A SHELL TERMINAL
 cd spelling
 ./generate-audio.sh
 git add .
