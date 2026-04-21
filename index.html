@@ -771,12 +771,18 @@ function init() {
     pill.innerHTML = `${w.emoji || '⭐'} <span style="margin-left:8px">${w.word}</span>`;
     preview.appendChild(pill);
   });
+
+  // Pre-probe all word audio files now, while there's no gesture needed.
+  // This warms the _audioCache so speakWord() can call audio.play()
+  // synchronously inside the user gesture on the Let's Go button tap.
+  words.forEach(w => _probeAudio(w.word));
 }
 
 function startGame() {
-  // This tap is the user gesture browsers require before allowing audio
   document.getElementById('start-screen').classList.add('hidden');
-  showWord(); // showWord calls speakWord internally
+  // Call showWord directly — cache is already warm so speakWord fires
+  // synchronously within this gesture context and iOS allows it.
+  showWord();
 }
 
 function applySeason(s) {
@@ -878,8 +884,13 @@ function showWord() {
   renderBoxes();
   updateScore();
 
-  // speak after a short delay so the card animation settles
-  setTimeout(speakWord, 500);
+  // First word: speak immediately so we stay within the iOS gesture window.
+  // Subsequent words: tiny delay so the card transition settles first.
+  if (wordIdx === 0) {
+    speakWord();
+  } else {
+    setTimeout(speakWord, 300);
+  }
 }
 
 // ══════════════════════════════════════════════════════
