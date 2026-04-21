@@ -772,16 +772,34 @@ function init() {
     preview.appendChild(pill);
   });
 
-  // Pre-probe all word audio files now, while there's no gesture needed.
-  // This warms the _audioCache so speakWord() can call audio.play()
-  // synchronously inside the user gesture on the Let's Go button tap.
+  // Pre-probe word files in the background so the cache is warm
+  // by the time the user reaches each word.
   words.forEach(w => _probeAudio(w.word));
 }
 
 function startGame() {
+  // ── iOS/iPadOS audio unlock ───────────────────────────────
+  // Safari requires audio AND speechSynthesis to be triggered
+  // synchronously within the gesture handler. Any async gap
+  // (setTimeout, fetch, Promise .then) breaks the permission window.
+  // Fire a silent Audio play and a silent TTS utterance RIGHT NOW
+  // to warm up both pipelines before any async work happens.
+
+  _unlockAudio();
+
+  if (window.speechSynthesis) {
+    const unlock = new SpeechSynthesisUtterance('\u200B'); // zero-width space
+    unlock.volume = 0;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(unlock);
+  }
+
   document.getElementById('start-screen').classList.add('hidden');
-  // Call showWord directly — cache is already warm so speakWord fires
-  // synchronously within this gesture context and iOS allows it.
+
+  // Pre-probe all encouragement clips in the background
+  PROMPTS_RIGHT.forEach(msg => _probeEncouragement(_encKey(msg)));
+  PROMPTS_WRONG.forEach(msg => _probeEncouragement(_encKey(msg)));
+
   showWord();
 }
 
@@ -1011,7 +1029,27 @@ function useHint() {
 //  AUDIO — file-first, Web Speech API fallback
 // ══════════════════════════════════════════════════════
 
+// Silent mp3 (44 bytes — the smallest valid mp3) as a data URI.
+// Playing this synchronously inside a gesture unlocks the Audio pipeline on iOS.
+const _SILENT_MP3 = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAABAAADQgD///////////////////////////////////////////8AAAA8TFZGSQAAABRWQVJJQU5URSBUZXN0AAAAAAAAAAAAAAD//8OEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
+function _unlockAudio() {
+  try {
+    const a = new Audio(_SILENT_MP3);
+    a.volume = 0;
+    a.play().catch(() => {});
+  } catch(e) {}
+}
+
+// Build the cache key for an encouragement message
+function _encKey(msg) {
+  const clean = msg.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  return 'audio/encouragement/' +
+    clean.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
+}
+
 const _audioCache = {};  // word -> url string (exists) | false (no file)
+const _encCache   = {};  // encouragement filename base -> url | false
 let   _currentAudio = null;
 
 function _audioFilename(word) {
@@ -1027,6 +1065,20 @@ function _probeAudio(word) {
     if (i >= urls.length) { _audioCache[word] = false; return Promise.resolve(null); }
     return fetch(urls[i], { method: 'HEAD' })
       .then(r => { if (r.ok) { _audioCache[word] = urls[i]; return urls[i]; } return tryNext(i+1); })
+      .catch(() => tryNext(i+1));
+  }
+  return tryNext(0);
+}
+
+// Check if an encouragement file exists (keyed by base path without extension)
+function _probeEncouragement(basePath) {
+  if (_encCache[basePath] !== undefined)
+    return Promise.resolve(_encCache[basePath] || null);
+  const urls = [basePath + '.mp3', basePath + '.aiff'];
+  function tryNext(i) {
+    if (i >= urls.length) { _encCache[basePath] = false; return Promise.resolve(null); }
+    return fetch(urls[i], { method: 'HEAD' })
+      .then(r => { if (r.ok) { _encCache[basePath] = urls[i]; return urls[i]; } return tryNext(i+1); })
       .catch(() => tryNext(i+1));
   }
   return tryNext(0);
@@ -1134,49 +1186,41 @@ function speakWord() {
 // On the last word, also speaks the definition.
 function speakEncouragement(msg, definitionSuffix) {
   _stopAudio();
-  if (!window.speechSynthesis && !window.Audio) return;
 
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
   const cleanMsg = stripEmoji(msg);
-
-  // Build the encouragement audio filename the same way the shell script does:
-  // lowercase, strip punctuation, spaces to underscores
-  const encFilename = 'audio/encouragement/' +
-    cleanMsg.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
+  const basePath = _encKey(msg);
 
   function playDefinition() {
-    // After encouragement, speak the definition on the last word via TTS
     if (definitionSuffix) {
       setTimeout(() => _speakTTS(stripEmoji(definitionSuffix), 0.88, 1.1), 300);
     }
   }
 
-  // Try mp3 then aiff
-  const urls = [encFilename + '.mp3', encFilename + '.aiff'];
-  function tryUrl(i) {
-    if (i >= urls.length) {
-      // No file found — fall back to TTS for the whole thing
+  const url = _encCache[basePath];
+
+  if (url) {
+    const audio = new Audio(url);
+    audio.playbackRate = 1.0;
+    _currentAudio = audio;
+    audio.onended = () => { _currentAudio = null; playDefinition(); };
+    audio.onerror = () => {
+      _currentAudio = null;
       let text = cleanMsg;
       if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
-      setTimeout(() => _speakTTS(text, 0.92, 1.15), 200);
-      return;
-    }
-    fetch(urls[i], { method: 'HEAD' })
-      .then(r => {
-        if (r.ok) {
-          const audio = new Audio(urls[i]);
-          audio.playbackRate = 1.0;
-          _currentAudio = audio;
-          audio.onended = () => { _currentAudio = null; playDefinition(); };
-          audio.onerror = () => { _currentAudio = null; tryUrl(i + 1); };
-          setTimeout(() => audio.play().catch(() => tryUrl(i + 1)), 200);
-        } else {
-          tryUrl(i + 1);
-        }
-      })
-      .catch(() => tryUrl(i + 1));
+      _speakTTS(text, 0.92, 1.15);
+    };
+    audio.play().catch(() => {
+      let text = cleanMsg;
+      if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
+      _speakTTS(text, 0.92, 1.15);
+    });
+  } else {
+    // No file found — fall back to TTS
+    let text = cleanMsg;
+    if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
+    setTimeout(() => _speakTTS(text, 0.92, 1.15), 200);
   }
-  tryUrl(0);
 }
 
 // ══════════════════════════════════════════════════════
