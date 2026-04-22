@@ -5,16 +5,14 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "hopeless",   hint: "no chance",        emoji: "😿" },
-  { word: "joyless",  hint: "no fun",  emoji: "😞" },
-  { word: "careless",     hint: "not paying attention",    emoji: "🥳" },
-  { word: "fearless",   hint: "brave",       emoji: "👮🏻‍♀️" },
-  { word: "lovely",     hint: "beautiful",       emoji: "🌷" },
-  { word: "badly",   hint: "not very good",    emoji: "😡" },
-  { word: "slowly",    hint: "not fast",           emoji: "🚸" },
-  { word: "quickly",  hint: "very fast",    emoji: "🏇🏼" },
-  { word: "happily",  hint: "_______ever after",    emoji: "😍" },
-  { word: "many",  hint: "lots",    emoji: "🍱" },
+  { word: "elephant",   hint: "a big grey animal",        emoji: "🐘" },
+  { word: "beautiful",  hint: "something really pretty",  emoji: "🌸" },
+  { word: "friend",     hint: "someone you play with",    emoji: "💛" },
+  { word: "together",   hint: "not apart, but ___",       emoji: "🤝" },
+  { word: "garden",     hint: "where flowers grow",       emoji: "🌷" },
+  { word: "birthday",   hint: "cake and candles day!",    emoji: "🎂" },
+  { word: "because",    hint: "the reason why",           emoji: "💬" },
+  { word: "favourite",  hint: "the one you like most",    emoji: "⭐" },
 ];
 
 // The date of this week's test — shown on the start screen.
