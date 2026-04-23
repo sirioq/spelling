@@ -614,7 +614,7 @@ h1 {
 
     <div class="listen-area">
       <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
-      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
+      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Hint</button>
     </div>
 
     <div class="hint-box" id="hint-box" style="display:none"></div>
@@ -773,7 +773,7 @@ function init() {
 
   // Pre-probe word files in the background so the cache is warm
   // by the time the user reaches each word.
-  words.forEach(w => _probeWord(w.word));
+  words.forEach(w => _probeAudio(w.word));
 }
 
 function startGame() {
@@ -788,11 +788,11 @@ function startGame() {
 
   document.getElementById('start-screen').classList.add('hidden');
 
-  // Pre-probe all audio files in the background so caches are warm
-  words.forEach(w => _probeWord(w.word));
-  PROMPTS_RIGHT.forEach(p => _probeEnc(p));
-  PROMPTS_WRONG.forEach(p => _probeEnc(p));
-  _probeEnc('Got it this time!'); // second-attempt phrase, not in PROMPTS_RIGHT
+  // Pre-probe all audio files in background so cache is warm
+  words.forEach(w => _probeAudio(w.word));
+  PROMPTS_RIGHT.forEach(msg => _probeAudio(_encKey(msg)));
+  PROMPTS_WRONG.forEach(msg => _probeAudio(_encKey(msg)));
+  _probeAudio(_encKey('Got it this time!'));
 
   showWord();
 }
@@ -1014,98 +1014,86 @@ function useHint() {
 }
 
 // ══════════════════════════════════════════════════════
-//  AUDIO
-//  Strategy: play pre-generated mp3 files where available,
-//  fall back to Web Speech API otherwise.
-//  Both pipelines are unlocked synchronously in startGame()
-//  via a silent mp3 and a silent TTS utterance.
+//  AUDIO — file-first, Web Speech API fallback
+//  Key iOS insight: reuse a single Audio element per role
+//  (word / encouragement) rather than creating new Audio()
+//  each time. iOS keeps a pre-unlocked element playable
+//  even outside a direct gesture; new Audio() loses that.
 // ══════════════════════════════════════════════════════
 
-// ── iOS unlock ────────────────────────────────────────
-// Smallest valid silent mp3 as a data URI
-const _SILENT_MP3 = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAABAAADQgD///////////////////////////////////////////8AAAA8TFZGSQAAABRWQVJJQU5URSBUZXN0AAAAAAAAAAAAAAD//8OEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const _audioCache = {};  // key -> url string | false
+let   _currentAudio = null;
+
+// ── iOS audio unlock ──────────────────────────────────
+let _audioUnlocked = false;
+const _silentUnlockAudio = new Audio();
 
 function _unlockAudio() {
-  try {
-    const a = new Audio(_SILENT_MP3);
-    a.muted = true;  // use muted not volume=0 — volume=0 affects session on iOS
-    a.play().catch(() => {});
-  } catch(e) {}
-}
-
-// ── File cache ────────────────────────────────────────
-// Both caches map a key -> resolved URL (string) or false (no file)
-const _wordCache = {};  // word  -> 'audio/elephant.mp3' | false
-const _encCache  = {};  // base  -> 'audio/encouragement/woohoo_correct.mp3' | false
-
-let _currentAudio = null;
-
-// Stop only the file audio (not TTS) — use before playing a new file
-function _stopFileAudio() {
-  if (_currentAudio) {
-    _currentAudio.pause();
-    _currentAudio.currentTime = 0;
-    _currentAudio = null;
+  if (_audioUnlocked) return;
+  _audioUnlocked = true;
+  _silentUnlockAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAA' +
+    'EAAQAAwF0AAIC7AAACABAAZGF0YQAAAAA=';
+  _silentUnlockAudio.volume = 0;
+  _silentUnlockAudio.play().catch(() => {});
+  if (window.AudioContext || window.webkitAudioContext) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ctx.resume().catch(() => {});
+    } catch(e) {}
   }
 }
 
-// Stop everything — use when changing word or celebrating
-function _stopAudio() {
-  _stopFileAudio();
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
+// ── File probe ────────────────────────────────────────
+function _audioFilename(word) {
+  return 'audio/' + word.toLowerCase().replace(/ /g, '_');
 }
 
-// Probe a list of candidate URLs, cache and return the first that exists
-function _probe(cacheObj, key, urls) {
-  if (cacheObj[key] !== undefined) return Promise.resolve(cacheObj[key] || null);
+function _probeAudio(word) {
+  if (_audioCache[word] !== undefined)
+    return Promise.resolve(_audioCache[word] || null);
+  const urls = [_audioFilename(word) + '.mp3', _audioFilename(word) + '.aiff'];
   function tryNext(i) {
-    if (i >= urls.length) { cacheObj[key] = false; return Promise.resolve(null); }
-    return fetch(urls[i], { method: 'HEAD' })
-      .then(r  => { if (r.ok) { cacheObj[key] = urls[i]; return urls[i]; } return tryNext(i+1); })
+    if (i >= urls.length) { _audioCache[word] = false; return Promise.resolve(null); }
+    return fetch(urls[i], { method: 'GET' })
+      .then(r => { if (r.ok) { _audioCache[word] = urls[i]; return urls[i]; } return tryNext(i+1); })
       .catch(() => tryNext(i+1));
   }
   return tryNext(0);
 }
 
-function _probeWord(word) {
-  const base = 'audio/' + word.toLowerCase().replace(/ /g, '_');
-  return _probe(_wordCache, word, [base + '.mp3', base + '.aiff']);
+// Convert encouragement phrase to cache key
+function _encKey(msg) {
+  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  return 'encouragement/' + stripEmoji(msg).toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
 }
 
-// Convert an encouragement phrase to its cache key / file base path.
-// Must match exactly how generate-audio.sh names the files:
-// lowercase, strip !?', replace spaces with underscores.
-function _encKey(phrase) {
-  return 'audio/encouragement/' +
-    phrase.toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
-}
-
-function _probeEnc(phrase) {
-  const base = _encKey(phrase);
-  return _probe(_encCache, base, [base + '.mp3', base + '.aiff']);
-}
-
-// ── Web Speech API (TTS fallback) ─────────────────────
-// Voices load asynchronously on Safari — poll until ready
-let _voicePollTimer = setInterval(() => {
-  if (window.speechSynthesis && window.speechSynthesis.getVoices().length) {
-    clearInterval(_voicePollTimer);
+function _stopAudio() {
+  if (_currentAudio) {
+    try { _currentAudio.pause(); _currentAudio.currentTime = 0; } catch(e) {}
+    _currentAudio = null;
   }
-}, 200);
-setTimeout(() => clearInterval(_voicePollTimer), 5000);
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => clearInterval(_voicePollTimer);
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
-function _getBestVoice() {
-  if (!window.speechSynthesis) return null;
+// ── Web Speech API (fallback) ─────────────────────────
+let _voicePollTimer = null;
+function _ensureVoices() {
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) { clearInterval(_voicePollTimer); }
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = _ensureVoices;
+  _voicePollTimer = setInterval(_ensureVoices, 200);
+  setTimeout(() => clearInterval(_voicePollTimer), 5000);
+  _ensureVoices();
+}
+
+function getBestVoice() {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-
   const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent)
                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
                || (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
-
   if (isApple) {
     return voices.find(v => v.name.includes('Serena')  && v.localService)
         || voices.find(v => v.lang === 'en-GB' && v.localService &&
@@ -1115,103 +1103,77 @@ function _getBestVoice() {
         || voices.find(v => v.name === 'Samantha')
         || null;
   }
-
-  const preferred = [
-    'Google UK English Female', 'Google UK English Male',
-    'Microsoft Libby Online (Natural)', 'Microsoft Mia Online (Natural)',
-    'Microsoft Ryan Online (Natural)', 'Daniel',
-  ];
+  const preferred = ['Google UK English Female','Google UK English Male',
+    'Microsoft Libby Online (Natural)','Microsoft Mia Online (Natural)',
+    'Microsoft Ryan Online (Natural)','Daniel'];
   for (const name of preferred) {
-    const v = voices.find(v => v.name === name);
-    if (v) return v;
+    const m = voices.find(v => v.name === name);
+    if (m) return m;
   }
   return voices.find(v => v.lang === 'en-GB')
       || voices.find(v => v.lang.startsWith('en'))
       || voices[0] || null;
 }
 
-function _tts(text, rate, pitch) {
+function _speakTTS(text, rate, pitch) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
-  const voice = _getBestVoice();
+  const voice = getBestVoice();
   if (voice) utter.voice = voice;
   utter.rate = rate; utter.pitch = pitch; utter.lang = 'en-GB';
   window.speechSynthesis.speak(utter);
 }
 
-// ── Play helpers ──────────────────────────────────────
-
-// Play an audio file URL, calling onEnded when done
-function _playFile(url, rate, onEnded) {
-  _stopFileAudio();
-  const audio = new Audio(url);
-  audio.playbackRate = rate;
-  _currentAudio = audio;
-  // Small delay in onEnded gives iOS time to fully release the audio session
-  // before the next audio element is created — prevents default voice fallback
-  const done = () => {
-    _currentAudio = null;
-    if (onEnded) setTimeout(onEnded, 150);
-  };
-  audio.onended = done;
-  audio.onerror = done;
-  audio.play().catch(done);
-}
+// ── Reused Audio elements ─────────────────────────────
+// iOS keeps a pre-unlocked Audio element playable even outside a gesture.
+// Creating new Audio() each time loses that unlocked state.
+const _wordAudioEl = new Audio();
+_wordAudioEl.playbackRate = 0.9;
+const _encAudioEl = new Audio();
 
 // ── Public speak functions ────────────────────────────
 
-// Speak the current spelling word
 function speakWord() {
-  _stopFileAudio();
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  _stopAudio();
   const word = words[wordIdx].word;
   const btn  = document.getElementById('btn-listen');
+  const cachedUrl = _audioCache[word];
 
-  function playUrl(url) {
-    if (url) {
-      const audio = new Audio(url);
-      audio.playbackRate = 0.9;
-      _currentAudio = audio;
-      btn.classList.add('speaking');
-      audio.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
-      audio.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _tts(word, 0.82, 1.1); };
-      audio.play().catch(() => { btn.classList.remove('speaking'); _tts(word, 0.82, 1.1); });
-    } else {
-      btn.classList.add('speaking');
-      _tts(word, 0.82, 1.1);
-      setTimeout(() => btn.classList.remove('speaking'), 3000);
-    }
-  }
-
-  // If already in cache, play synchronously (keeps us in iOS gesture window)
-  if (_wordCache[word] !== undefined) {
-    playUrl(_wordCache[word] || null);
+  if (cachedUrl) {
+    btn.classList.add('speaking');
+    _wordAudioEl.src = cachedUrl;
+    _currentAudio = _wordAudioEl;
+    _wordAudioEl.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
+    _wordAudioEl.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _speakTTS(word, 0.82, 1.1); };
+    _wordAudioEl.play().catch(() => { btn.classList.remove('speaking'); _speakTTS(word, 0.82, 1.1); });
   } else {
-    // Not cached yet — probe then play (only happens if probe wasn't run first)
-    _probeWord(word).then(playUrl);
+    btn.classList.add('speaking');
+    _speakTTS(word, 0.82, 1.1);
+    setTimeout(() => btn.classList.remove('speaking'), 3000);
+    if (cachedUrl === undefined) _probeAudio(word);
   }
 }
 
-// Speak an encouragement phrase
 function speakEncouragement(phrase) {
-  _stopFileAudio();
+  _stopAudio();
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
-  const base = _encKey(phrase);
+  const cleanMsg   = stripEmoji(phrase);
+  const key        = _encKey(phrase);
+  const cachedUrl  = _audioCache[key];
 
-  function playEnc(url) {
-    if (url) {
-      _playFile(url, 1.0, null);
-    } else {
-      _tts(stripEmoji(phrase), 0.92, 1.15);
-    }
+  if (cachedUrl) {
+    _encAudioEl.src = cachedUrl;
+    _currentAudio = _encAudioEl;
+    _encAudioEl.onended = () => { _currentAudio = null; };
+    _encAudioEl.onerror = () => { _currentAudio = null; _speakTTS(cleanMsg, 0.92, 1.15); };
+    setTimeout(() => _encAudioEl.play().catch(() => _speakTTS(cleanMsg, 0.92, 1.15)), 100);
+    return;
   }
 
-  if (_encCache[base] !== undefined) {
-    playEnc(_encCache[base] || null);
-  } else {
-    _probeEnc(phrase).then(playEnc);
-  }
+  // No file — TTS immediately
+  setTimeout(() => _speakTTS(cleanMsg, 0.92, 1.15), 100);
+  if (cachedUrl === undefined) _probeAudio(key);
 }
 
 // ══════════════════════════════════════════════════════
@@ -1470,8 +1432,8 @@ function retryMissed() {
   words = shuffle(SPELLING_WORDS.filter(w => uniqueMissed.includes(w.word)));
   wordIdx=0; score=0; streak=0; missed=[]; hints=0;
   buildStars(); updateScore(); updateStreak();
-  // Pre-probe the new word set (encouragement already cached from session start)
-  words.forEach(w => _probeWord(w.word));
+  // Pre-probe the new word set
+  words.forEach(w => _probeAudio(w.word));
   showWord();
 }
 
