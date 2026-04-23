@@ -614,7 +614,7 @@ h1 {
 
     <div class="listen-area">
       <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
-      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Hint</button>
+      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
     </div>
 
     <div class="hint-box" id="hint-box" style="display:none"></div>
@@ -1166,36 +1166,51 @@ function speakWord() {
   _stopFileAudio();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   const word = words[wordIdx].word;
-  const url  = _wordCache[word];
   const btn  = document.getElementById('btn-listen');
 
-  if (url) {
-    const audio = new Audio(url);
-    audio.playbackRate = 0.9;
-    _currentAudio = audio;
-    btn.classList.add('speaking');
-    audio.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
-    audio.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null;
-                            _tts(word, 0.82, 1.1); };
-    audio.play().catch(() => { btn.classList.remove('speaking'); _tts(word, 0.82, 1.1); });
+  function playUrl(url) {
+    if (url) {
+      const audio = new Audio(url);
+      audio.playbackRate = 0.9;
+      _currentAudio = audio;
+      btn.classList.add('speaking');
+      audio.onended = () => { btn.classList.remove('speaking'); _currentAudio = null; };
+      audio.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _tts(word, 0.82, 1.1); };
+      audio.play().catch(() => { btn.classList.remove('speaking'); _tts(word, 0.82, 1.1); });
+    } else {
+      btn.classList.add('speaking');
+      _tts(word, 0.82, 1.1);
+      setTimeout(() => btn.classList.remove('speaking'), 3000);
+    }
+  }
+
+  // If already in cache, play synchronously (keeps us in iOS gesture window)
+  if (_wordCache[word] !== undefined) {
+    playUrl(_wordCache[word] || null);
   } else {
-    btn.classList.add('speaking');
-    _tts(word, 0.82, 1.1);
-    setTimeout(() => btn.classList.remove('speaking'), 3000);
+    // Not cached yet — probe then play (only happens if probe wasn't run first)
+    _probeWord(word).then(playUrl);
   }
 }
 
 // Speak an encouragement phrase
-function speakEncouragement(phrase, definitionSuffix) {
+function speakEncouragement(phrase) {
   _stopFileAudio();
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  const base = _encKey(phrase);
 
-  const url = _encCache[_encKey(phrase)];
+  function playEnc(url) {
+    if (url) {
+      _playFile(url, 1.0, null);
+    } else {
+      _tts(stripEmoji(phrase), 0.92, 1.15);
+    }
+  }
 
-  if (url) {
-    _playFile(url, 1.0, null);
+  if (_encCache[base] !== undefined) {
+    playEnc(_encCache[base] || null);
   } else {
-    _tts(stripEmoji(phrase), 0.92, 1.15);
+    _probeEnc(phrase).then(playEnc);
   }
 }
 
@@ -1221,7 +1236,7 @@ function checkSpelling() {
       : 'Got it this time!';
     showFeedback(true, word, msg, typed);
     firework();
-    speakEncouragement(msg, '');
+    speakEncouragement(msg);
     wordIdx++;
     feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2600);
   } else {
