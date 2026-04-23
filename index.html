@@ -1026,8 +1026,11 @@ function useHint() {
 const _SILENT_MP3 = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAABAAADQgD///////////////////////////////////////////8AAAA8TFZGSQAAABRWQVJJQU5URSBUZXN0AAAAAAAAAAAAAAD//8OEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 function _unlockAudio() {
-  try { const a = new Audio(_SILENT_MP3); a.volume = 0; a.play().catch(() => {}); }
-  catch(e) {}
+  try {
+    const a = new Audio(_SILENT_MP3);
+    a.muted = true;  // use muted not volume=0 — volume=0 affects session on iOS
+    a.play().catch(() => {});
+  } catch(e) {}
 }
 
 // ── File cache ────────────────────────────────────────
@@ -1037,12 +1040,18 @@ const _encCache  = {};  // base  -> 'audio/encouragement/woohoo_correct.mp3' | f
 
 let _currentAudio = null;
 
-function _stopAudio() {
+// Stop only the file audio (not TTS) — use before playing a new file
+function _stopFileAudio() {
   if (_currentAudio) {
     _currentAudio.pause();
     _currentAudio.currentTime = 0;
     _currentAudio = null;
   }
+}
+
+// Stop everything — use when changing word or celebrating
+function _stopAudio() {
+  _stopFileAudio();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
@@ -1133,24 +1142,31 @@ function _tts(text, rate, pitch) {
 
 // ── Play helpers ──────────────────────────────────────
 
-// Play an audio file URL, calling onEnded when done, falling back to TTS
+// Play an audio file URL, calling onEnded when done
 function _playFile(url, rate, onEnded) {
-  _stopAudio();
+  _stopFileAudio();
   const audio = new Audio(url);
   audio.playbackRate = rate;
   _currentAudio = audio;
-  audio.onended = () => { _currentAudio = null; if (onEnded) onEnded(); };
-  audio.onerror = () => { _currentAudio = null; if (onEnded) onEnded(); };
-  audio.play().catch(() => { _currentAudio = null; if (onEnded) onEnded(); });
+  // Small delay in onEnded gives iOS time to fully release the audio session
+  // before the next audio element is created — prevents default voice fallback
+  const done = () => {
+    _currentAudio = null;
+    if (onEnded) setTimeout(onEnded, 150);
+  };
+  audio.onended = done;
+  audio.onerror = done;
+  audio.play().catch(done);
 }
 
 // ── Public speak functions ────────────────────────────
 
 // Speak the current spelling word
 function speakWord() {
-  _stopAudio();
+  _stopFileAudio();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   const word = words[wordIdx].word;
-  const url  = _wordCache[word];  // cache already warm from startGame probe
+  const url  = _wordCache[word];
   const btn  = document.getElementById('btn-listen');
 
   if (url) {
@@ -1169,26 +1185,17 @@ function speakWord() {
   }
 }
 
-// Speak an encouragement phrase, optionally followed by a definition
+// Speak an encouragement phrase
 function speakEncouragement(phrase, definitionSuffix) {
-  _stopAudio();
+  _stopFileAudio();
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
 
-  function afterPhrase() {
-    if (definitionSuffix) {
-      setTimeout(() => _tts(stripEmoji(definitionSuffix), 0.88, 1.1), 300);
-    }
-  }
-
-  const url = _encCache[_encKey(phrase)];  // cache warm from startGame probe
+  const url = _encCache[_encKey(phrase)];
 
   if (url) {
-    _playFile(url, 1.0, afterPhrase);
+    _playFile(url, 1.0, null);
   } else {
-    // TTS fallback — speak phrase then definition together
-    let text = stripEmoji(phrase);
-    if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
-    _tts(text, 0.92, 1.15);
+    _tts(stripEmoji(phrase), 0.92, 1.15);
   }
 }
 
@@ -1216,7 +1223,7 @@ function checkSpelling() {
     firework();
     speakEncouragement(msg, '');
     wordIdx++;
-    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2200);
+    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2600);
   } else {
     renderBoxes('wrong');
     streak = 0; updateStreak();
