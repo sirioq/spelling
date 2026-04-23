@@ -1208,6 +1208,7 @@ function checkSpelling() {
     firstTry = false;
     const msg = PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)];
     showFeedback(false, word, msg, typed);
+    speakEncouragement(msg);
     // Don't speak here — tryAgain() speaks the word after the overlay clears
   }
 }
