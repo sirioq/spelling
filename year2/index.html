@@ -555,6 +555,19 @@ h1 {
   -webkit-tap-highlight-color:transparent;
 }
 .btn-start:active { transform:translateY(6px); box-shadow:0 1px 0 #c9a200; }
+
+.start-test-date {
+  font-family:'Fredoka One',cursive; font-size:1rem;
+  margin-top:-18px; margin-bottom:24px;
+  padding:5px 18px; border-radius:20px;
+  background:rgba(255,255,255,0.7);
+  animation:bounceIn .7s .3s cubic-bezier(.34,1.56,.64,1) both;
+  transition:color .8s;
+}
+.season-spring .start-test-date { color:#c060a0; }
+.season-summer .start-test-date { color:#c08000; }
+.season-autumn .start-test-date { color:#a04000; }
+.season-winter .start-test-date { color:#2060a0; }
 </style>
 </head>
 <body>
@@ -563,6 +576,7 @@ h1 {
   <div class="start-icon" id="start-icon">🌸</div>
   <div class="start-title">Year 2<br>Spelling Challenge!</div>
   <div class="start-word-count" id="start-word-count">8 words this week</div>
+  <div class="start-test-date" id="start-test-date">📅 Test: 28 April 2025</div>
   <div class="start-word-preview" id="start-word-preview"></div>
   <button class="btn-start" onclick="startGame()">Let's Go! 🔊</button>
 </div>
@@ -599,7 +613,7 @@ h1 {
     </div>
 
     <div class="listen-area">
-      <button class="btn-listen" id="btn-listen" onclick="_unlockAudio();speakWord()" title="Hear the word">🔊</button>
+      <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
       <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Hint</button>
     </div>
 
@@ -680,13 +694,11 @@ const PROMPTS_RIGHT = [
   'Woohoo! Correct!',
   'Brilliant spelling!',
   'You got it!',
- // 'Fantastic, Ludovica!',
+  //'Fantastic, Ludovica!',
   'YES! Perfect!',
   'Superstar speller!',
   'Incredible!',
   'Nailed it!',
-  // 'Ludovica, you are amazing!',
-  'Good job!',
 ];
 const PROMPTS_WRONG = [
   'Not quite, listen again!',
@@ -743,6 +755,13 @@ function init() {
   document.getElementById('start-icon').textContent = S.icon;
   document.getElementById('start-word-count').textContent =
     `${words.length} word${words.length !== 1 ? 's' : ''} this week`;
+  const dateEl = document.getElementById('start-test-date');
+  if (typeof TEST_DATE !== 'undefined' && TEST_DATE) {
+    dateEl.textContent = '📅 Test: ' + TEST_DATE;
+    dateEl.style.display = '';
+  } else {
+    dateEl.style.display = 'none';
+  }
   const preview = document.getElementById('start-word-preview');
   preview.innerHTML = '';
   words.forEach(w => {
@@ -751,24 +770,17 @@ function init() {
     pill.innerHTML = `${w.emoji || '⭐'} <span style="margin-left:8px">${w.word}</span>`;
     preview.appendChild(pill);
   });
+
+  // Pre-probe word files in the background so the cache is warm
+  // by the time the user reaches each word.
+  words.forEach(w => _probeAudio(w.word));
 }
 
 function startGame() {
-  // ── iOS/iPadOS audio unlock ────────────────────────────────────────────
-  // Old Safari requires audio AND speechSynthesis to be triggered
-  // *synchronously* within the gesture handler — any async gap (setTimeout,
-  // fetch, Promise .then) breaks the permission window.
-  //
-  // Fire a silent utterance AND a silent Audio play RIGHT NOW, synchronously,
-  // before anything else. This warms up both pipelines so that the subsequent
-  // programmatic calls (after timeouts / promises) work.
-
-  _unlockAudio(); // silent Audio element play
-
+  // Unlock both audio pipelines synchronously within the gesture
+  _unlockAudio();
   if (window.speechSynthesis) {
-    // Speak an empty/silent utterance synchronously — enough to unlock TTS
-    // on older Safari without producing audible output.
-    const unlock = new SpeechSynthesisUtterance('\u200B'); // zero-width space
+    const unlock = new SpeechSynthesisUtterance('\u200B');
     unlock.volume = 0;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(unlock);
@@ -776,16 +788,13 @@ function startGame() {
 
   document.getElementById('start-screen').classList.add('hidden');
 
-  // Pre-probe all word audio files in the background so the cache is warm
-  // by the time the user reaches each word.
+  // Pre-probe all audio files in background so cache is warm
   words.forEach(w => _probeAudio(w.word));
-
-  // Pre-probe all encouragement clips too
   PROMPTS_RIGHT.forEach(msg => _probeAudio(_encKey(msg)));
   PROMPTS_WRONG.forEach(msg => _probeAudio(_encKey(msg)));
-  _probeAudio(_encKey('Got it this time! 💪'));
+  _probeAudio(_encKey('Got it this time!'));
 
-  showWord(); // showWord calls speakWord internally
+  showWord();
 }
 
 function applySeason(s) {
@@ -887,8 +896,7 @@ function showWord() {
   renderBoxes();
   updateScore();
 
-  // speak after a short delay so the card animation settles
-  setTimeout(speakWord, 500);
+  setTimeout(speakWord, 300);
 }
 
 // ══════════════════════════════════════════════════════
@@ -1007,27 +1015,26 @@ function useHint() {
 
 // ══════════════════════════════════════════════════════
 //  AUDIO — file-first, Web Speech API fallback
+//  Key iOS insight: reuse a single Audio element per role
+//  (word / encouragement) rather than creating new Audio()
+//  each time. iOS keeps a pre-unlocked element playable
+//  even outside a direct gesture; new Audio() loses that.
 // ══════════════════════════════════════════════════════
 
-const _audioCache = {};  // word -> url string (exists) | false (no file)
+const _audioCache = {};  // key -> url string | false
 let   _currentAudio = null;
 
 // ── iOS audio unlock ──────────────────────────────────
-// Safari on iOS/iPadOS requires audio to be triggered directly from a user
-// gesture. We unlock a shared Audio element on the first tap so that
-// subsequent programmatic plays (autoplay on new word, encouragement) work.
 let _audioUnlocked = false;
 const _silentUnlockAudio = new Audio();
 
 function _unlockAudio() {
   if (_audioUnlocked) return;
   _audioUnlocked = true;
-  // Play a silent 1-sample data URI to warm up the audio pipeline
   _silentUnlockAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAA' +
     'EAAQAAwF0AAIC7AAACABAAZGF0YQAAAAA=';
   _silentUnlockAudio.volume = 0;
   _silentUnlockAudio.play().catch(() => {});
-  // Also resume any suspended AudioContext (belt-and-braces)
   if (window.AudioContext || window.webkitAudioContext) {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1036,11 +1043,11 @@ function _unlockAudio() {
   }
 }
 
+// ── File probe ────────────────────────────────────────
 function _audioFilename(word) {
   return '../audio/' + word.toLowerCase().replace(/ /g, '_');
 }
 
-// Check if an audio file exists for this word (mp3 then aiff)
 function _probeAudio(word) {
   if (_audioCache[word] !== undefined)
     return Promise.resolve(_audioCache[word] || null);
@@ -1054,22 +1061,25 @@ function _probeAudio(word) {
   return tryNext(0);
 }
 
+// Convert encouragement phrase to cache key
+function _encKey(msg) {
+  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
+  return 'encouragement/' + stripEmoji(msg).toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
+}
+
 function _stopAudio() {
   if (_currentAudio) {
     try { _currentAudio.pause(); _currentAudio.currentTime = 0; } catch(e) {}
     _currentAudio = null;
   }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
 // ── Web Speech API (fallback) ─────────────────────────
-
 let _voicePollTimer = null;
 function _ensureVoices() {
   const v = window.speechSynthesis.getVoices();
-  if (v.length) {
-    clearInterval(_voicePollTimer);
-    console.log('🎙 Best TTS voice:', getBestVoice()?.name ?? 'none');
-  }
+  if (v.length) { clearInterval(_voicePollTimer); }
 }
 if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = _ensureVoices;
@@ -1085,25 +1095,20 @@ function getBestVoice() {
                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
                || (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
   if (isApple) {
-    const serena  = voices.find(v => v.name.includes('Serena') && v.localService);
-    if (serena) return serena;
-    const enhGB   = voices.find(v => v.lang === 'en-GB' && v.localService &&
-                      (v.name.includes('Enhanced') || v.name.includes('Premium')));
-    if (enhGB) return enhGB;
-    const daniel  = voices.find(v => v.name.includes('Daniel') && v.localService);
-    if (daniel) return daniel;
-    const localGB = voices.find(v => v.lang === 'en-GB' && v.localService);
-    if (localGB) return localGB;
-    const sam     = voices.find(v => v.name === 'Samantha');
-    if (sam) return sam;
-  } else {
-    const preferred = ['Google UK English Female','Google UK English Male',
-      'Microsoft Libby Online (Natural)','Microsoft Mia Online (Natural)',
-      'Microsoft Ryan Online (Natural)','Daniel'];
-    for (const name of preferred) {
-      const m = voices.find(v => v.name === name);
-      if (m) return m;
-    }
+    return voices.find(v => v.name.includes('Serena')  && v.localService)
+        || voices.find(v => v.lang === 'en-GB' && v.localService &&
+                            (v.name.includes('Enhanced') || v.name.includes('Premium')))
+        || voices.find(v => v.name.includes('Daniel')  && v.localService)
+        || voices.find(v => v.lang === 'en-GB' && v.localService)
+        || voices.find(v => v.name === 'Samantha')
+        || null;
+  }
+  const preferred = ['Google UK English Female','Google UK English Male',
+    'Microsoft Libby Online (Natural)','Microsoft Mia Online (Natural)',
+    'Microsoft Ryan Online (Natural)','Daniel'];
+  for (const name of preferred) {
+    const m = voices.find(v => v.name === name);
+    if (m) return m;
   }
   return voices.find(v => v.lang === 'en-GB')
       || voices.find(v => v.lang.startsWith('en'))
@@ -1113,36 +1118,29 @@ function getBestVoice() {
 function _speakTTS(text, rate, pitch) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const voices = window.speechSynthesis.getVoices();
   const utter = new SpeechSynthesisUtterance(text);
   const voice = getBestVoice();
   if (voice) utter.voice = voice;
   utter.rate = rate; utter.pitch = pitch; utter.lang = 'en-GB';
-  // Speak immediately — no setTimeout, which would break Safari's gesture window
   window.speechSynthesis.speak(utter);
 }
 
-// ── Main speak functions ──────────────────────────────
-
-// A single reused Audio element — iOS allows play() on a previously-unlocked
-// element even outside a direct user gesture.
+// ── Reused Audio elements ─────────────────────────────
+// iOS keeps a pre-unlocked Audio element playable even outside a gesture.
+// Creating new Audio() each time loses that unlocked state.
 const _wordAudioEl = new Audio();
-_wordAudioEl.playbackRate = 0.92;
+_wordAudioEl.playbackRate = 0.9;
+const _encAudioEl = new Audio();
+
+// ── Public speak functions ────────────────────────────
 
 function speakWord() {
   _stopAudio();
   const word = words[wordIdx].word;
   const btn  = document.getElementById('btn-listen');
-  const ind  = document.getElementById('voice-indicator');
-
-  // If we already know the URL (cached), use the audio file immediately.
-  // Otherwise speak via TTS right away (no async gap) — and probe in the
-  // background so the audio file is cached and ready from next time.
   const cachedUrl = _audioCache[word];
 
   if (cachedUrl) {
-    // We have a confirmed audio file — play it
-    if (ind) ind.textContent = '🔊 audio file';
     btn.classList.add('speaking');
     _wordAudioEl.src = cachedUrl;
     _currentAudio = _wordAudioEl;
@@ -1150,103 +1148,31 @@ function speakWord() {
     _wordAudioEl.onerror = () => { btn.classList.remove('speaking'); _currentAudio = null; _speakTTS(word, 0.82, 1.1); };
     _wordAudioEl.play().catch(() => { btn.classList.remove('speaking'); _speakTTS(word, 0.82, 1.1); });
   } else {
-    // Either no file (cachedUrl===false) or not yet probed (undefined).
-    // Speak via TTS immediately — this is synchronous and works on old Safari.
-    if (ind) ind.textContent = '🎙 ' + (getBestVoice()?.name ?? 'TTS');
     btn.classList.add('speaking');
     _speakTTS(word, 0.82, 1.1);
     setTimeout(() => btn.classList.remove('speaking'), 3000);
-
-    // In the background, probe for an audio file so next visit uses it
-    if (cachedUrl === undefined) {
-      _probeAudio(word); // just populates _audioCache, result ignored here
-    }
+    if (cachedUrl === undefined) _probeAudio(word);
   }
 }
 
-// Reused element for encouragement clips
-const _encAudioEl = new Audio();
-
-// Convert an encouragement message to the cache key used by _probeAudio.
-// _probeAudio stores: _audioCache[key] = url  (or false if not found)
-// We pass the full base path as the "word" so it builds audio/... + .mp3/.aiff
-function _encKey(msg) {
-  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
-  return 'encouragement/' + stripEmoji(msg).toLowerCase().replace(/[!?',]/g, '').replace(/ /g, '_');
-}
-
-// Speak encouragement after correct answer.
-// On the last word, also speaks the definition.
-function speakEncouragement(msg, definitionSuffix) {
+function speakEncouragement(phrase) {
   _stopAudio();
-
   const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
-  const cleanMsg = stripEmoji(msg);
-
-  function playDefinition() {
-    if (definitionSuffix) {
-      setTimeout(() => _speakTTS(stripEmoji(definitionSuffix), 0.88, 1.1), 300);
-    }
-  }
-
-  // _probeAudio uses _audioCache[key] where key is the plain "word" passed in.
-  // We pass the enc path so it builds: audio/<key>.mp3 / audio/<key>.aiff
-  const key = _encKey(msg);
-  const cachedUrl = _audioCache[key]; // set by _probeAudio: url string or false
-
-  if (cachedUrl) {
-    // Confirmed audio file in cache — play it
-    _encAudioEl.src = cachedUrl;
-    _currentAudio = _encAudioEl;
-    _encAudioEl.onended = () => { _currentAudio = null; playDefinition(); };
-    _encAudioEl.onerror = () => { _currentAudio = null; _speakTTS(cleanMsg, 0.92, 1.15); playDefinition(); };
-    setTimeout(() => _encAudioEl.play().catch(() => { _speakTTS(cleanMsg, 0.92, 1.15); playDefinition(); }), 200);
-    return;
-  }
-
-  // No file (false) or not yet probed (undefined) — fall back to TTS immediately
-  let text = cleanMsg;
-  if (definitionSuffix) text += '. ' + stripEmoji(definitionSuffix);
-  setTimeout(() => _speakTTS(text, 0.92, 1.15), 200);
-
-  // Probe in background so next time this message plays it uses the audio file
-  if (cachedUrl === undefined) _probeAudio(key);
-}
-
-// Speak a wrong-answer encouragement prompt, then repeat the word.
-// Used so the child hears "Almost! Try again!" followed by the word to spell.
-function speakEncouragementThenWord(msg, word) {
-  _stopAudio();
-
-  const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/gu, '').trim();
-  const cleanMsg = stripEmoji(msg);
-  const key = _encKey(msg);
-  const cachedUrl = _audioCache[key];
-
-  function thenSpeakWord() {
-    setTimeout(() => _speakTTS(word, 0.82, 1.1), 400);
-  }
+  const cleanMsg   = stripEmoji(phrase);
+  const key        = _encKey(phrase);
+  const cachedUrl  = _audioCache[key];
 
   if (cachedUrl) {
     _encAudioEl.src = cachedUrl;
     _currentAudio = _encAudioEl;
-    _encAudioEl.onended = () => { _currentAudio = null; thenSpeakWord(); };
-    _encAudioEl.onerror = () => { _currentAudio = null; _speakTTS(cleanMsg + '. ' + word, 0.92, 1.1); };
-    setTimeout(() => _encAudioEl.play().catch(() => { _speakTTS(cleanMsg + '. ' + word, 0.92, 1.1); }), 200);
+    _encAudioEl.onended = () => { _currentAudio = null; };
+    _encAudioEl.onerror = () => { _currentAudio = null; _speakTTS(cleanMsg, 0.92, 1.15); };
+    setTimeout(() => _encAudioEl.play().catch(() => _speakTTS(cleanMsg, 0.92, 1.15)), 100);
     return;
   }
 
-  // No file — TTS the prompt then the word together
-  setTimeout(() => {
-    _speakTTS(cleanMsg, 0.92, 1.15);
-    // Queue the word as a second utterance after a gap
-    const wordUtter = new SpeechSynthesisUtterance(word);
-    const voice = getBestVoice();
-    if (voice) wordUtter.voice = voice;
-    wordUtter.rate = 0.82; wordUtter.pitch = 1.1; wordUtter.lang = 'en-GB';
-    window.speechSynthesis.speak(wordUtter);
-  }, 200);
-
+  // No file — TTS immediately
+  setTimeout(() => _speakTTS(cleanMsg, 0.92, 1.15), 100);
   if (cachedUrl === undefined) _probeAudio(key);
 }
 
@@ -1269,19 +1195,12 @@ function checkSpelling() {
     updateScore(); updateStreak();
     const msg = firstTry
       ? PROMPTS_RIGHT[Math.floor(Math.random()*PROMPTS_RIGHT.length)]
-      : 'Got it this time! 💪';
-    const isLastWord = (wordIdx === words.length - 1);
+      : 'Got it this time!';
     showFeedback(true, word, msg, typed);
     firework();
-
-    if (isLastWord) {
-      speakEncouragement(msg, '');
-    } else {
-      speakEncouragement(msg, '');
-    }
-
+    speakEncouragement(msg);
     wordIdx++;
-    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2200);
+    feedbackTimer = setTimeout(() => { hideFeedback(); showWord(); }, 2600);
   } else {
     renderBoxes('wrong');
     streak = 0; updateStreak();
@@ -1289,9 +1208,7 @@ function checkSpelling() {
     firstTry = false;
     const msg = PROMPTS_WRONG[Math.floor(Math.random()*PROMPTS_WRONG.length)];
     showFeedback(false, word, msg, typed);
-    // Speak the encouragement prompt, then repeat the word after it finishes
-    speakEncouragementThenWord(msg, word);
-    // No timer — user must press Try Again button
+    // Don't speak here — tryAgain() speaks the word after the overlay clears
   }
 }
 
@@ -1300,6 +1217,8 @@ function tryAgain() {
   hideFeedback();
   typed = '';
   renderBoxes();
+  // Re-speak the word so she can listen again before her next attempt
+  setTimeout(speakWord, 300);
 }
 
 function skipWord() {
@@ -1437,6 +1356,7 @@ function firework() {
 //  CELEBRATION
 // ══════════════════════════════════════════════════════
 function celebrate() {
+  _stopAudio(); // cancel any lingering encouragement or definition speech
   document.getElementById('celebration').classList.add('show');
   launchConfetti();
 
@@ -1455,7 +1375,7 @@ function celebrate() {
 
   let mainMsg = '';
   if (perfect) {
-    mainMsg = 'You spelled every word right with no hints! You\'re incredible! 👑';
+    mainMsg = 'Yes! You spelled every word right with no hints! You\'re incredible! 👑';
   } else if (pct === 100) {
     mainMsg = `Well done! All ${total} words correct! Next time try with no hints! 💡`;
   } else {
@@ -1512,6 +1432,8 @@ function retryMissed() {
   words = shuffle(SPELLING_WORDS.filter(w => uniqueMissed.includes(w.word)));
   wordIdx=0; score=0; streak=0; missed=[]; hints=0;
   buildStars(); updateScore(); updateStreak();
+  // Pre-probe the new word set
+  words.forEach(w => _probeAudio(w.word));
   showWord();
 }
 
