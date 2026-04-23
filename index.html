@@ -773,7 +773,7 @@ function init() {
 
   // Pre-probe word files in the background so the cache is warm
   // by the time the user reaches each word.
-  words.forEach(w => _probeAudio(w.word));
+  words.forEach(w => _probeWord(w.word));
 }
 
 function startGame() {
