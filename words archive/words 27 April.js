@@ -5,21 +5,21 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "invention",   hint: "something new",        emoji: "💡" },
-  { word: "creation",  hint: "the start of everything",  emoji: "🎬" },
-  { word: "introduction",     hint: "before the main part",    emoji: "📖" },
-  { word: "option",   hint: "a choice",       emoji: "🤔" },
-  { word: "completion",     hint: "finished",       emoji: "🔚" },
-  { word: "addition",   hint: "6+7",    emoji: "➕" },
-  { word: "subtraction",    hint: "7-6",           emoji: "➖" },
-  { word: "beautiful",  hint: "like a rose",    emoji: "🌹" },
-  { word: "water",  hint: "the best drink",    emoji: "💦" },
-  { word: "busy",  hint: "as ______ as a bee",    emoji: "🐝" },
+  { word: "hopeless",   hint: "no chance",        emoji: "😿" },
+  { word: "joyless",  hint: "no fun",  emoji: "😞" },
+  { word: "careless",     hint: "not paying attention",    emoji: "🥳" },
+  { word: "fearless",   hint: "brave",       emoji: "👮🏻‍♀️" },
+  { word: "lovely",     hint: "beautiful",       emoji: "🌷" },
+  { word: "badly",   hint: "not very good",    emoji: "😡" },
+  { word: "slowly",    hint: "not fast",           emoji: "🚸" },
+  { word: "quickly",  hint: "very fast",    emoji: "🏇🏼" },
+  { word: "happily",  hint: "_______ever after",    emoji: "😍" },
+  { word: "many",  hint: "lots",    emoji: "🍱" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Tuesday 5 May 2026";
+const TEST_DATE = "27 April 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
