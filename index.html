@@ -278,6 +278,25 @@ h1 {
 .kb-key.kb-del { background:linear-gradient(135deg,#ff9090,#e06060) !important; box-shadow:0 4px 0 #b03030 !important; }
 .kb-key.kb-del:active { transform:translateY(3px); box-shadow:0 1px 0 #b03030 !important; }
 
+
+/* Special purple styling for the 'smart' apostrophe key */
+.kb-key.kb-apo {
+  background: linear-gradient(135deg, #a259ff, #8040d0) !important;
+  box-shadow: 0 4px 0 #5e2ca3 !important;
+}
+
+.kb-key.kb-apo:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #5e2ca3 !important;
+}
+
+/* Optional: Slimmer box for the apostrophe in the display */
+.letter-box.is-punctuation {
+  width: clamp(20px, 5vw, 30px) !important;
+  border-color: transparent;
+  background: transparent;
+}
+
 /* ── action row ── */
 .actions { display:flex; gap:10px; }
 .btn-check {
@@ -834,12 +853,30 @@ function buildParticles(emojis) {
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
   kb.innerHTML = '';
-  KB_ROWS.forEach(row => {
+  
+  // 1. Get the current word to check for apostrophes
+  const currentWord = words[wordIdx] ? words[wordIdx].word : "";
+  
+  // 2. Create a deep copy of your base KB_ROWS
+  let rowsToBuild = JSON.parse(JSON.stringify(KB_ROWS));
+
+  // 3. Inject apostrophe if needed
+  if (currentWord.includes("'")) {
+    const lastRow = rowsToBuild[2];
+    const backspaceIdx = lastRow.indexOf('⌫');
+    if (backspaceIdx !== -1) {
+      lastRow.splice(backspaceIdx, 0, "'");
+    }
+  }
+
+  rowsToBuild.forEach(row => {
     const rowEl = document.createElement('div');
     rowEl.className = 'kb-row';
     row.forEach(k => {
       const btn = document.createElement('button');
-      btn.className = 'kb-key' + (k === '⌫' ? ' kb-del' : '');
+      // Add a special class if it's the apostrophe for specific styling
+      const isApo = k === "'";
+      btn.className = 'kb-key' + (k === '⌫' ? ' kb-del' : '') + (isApo ? ' kb-apo' : '');
       btn.textContent = k;
       btn.dataset.key = k;
       btn.addEventListener('pointerdown', e => { e.preventDefault(); handleKey(k); });
@@ -878,6 +915,9 @@ function showWord() {
   typed = '';
   firstTry = true;
   hideFeedback();
+
+// ADD THIS LINE HERE:
+buildKeyboard();
 
   // counter
   document.getElementById('word-counter').textContent =
@@ -933,6 +973,7 @@ function renderBoxes(state) {
 
   for (let i = 0; i < displayLength; i++) {
     const box = document.createElement('div');
+    const charAtPos = word[i]; // The actual character from the target word
     box.className = 'letter-box';
     box.style.width    = boxSize + 'px';
     box.style.height   = height + 'px';
@@ -940,10 +981,10 @@ function renderBoxes(state) {
 
     if (state === 'correct') {
       box.classList.add('correct');
-      box.textContent = word[i].toUpperCase();
+      box.textContent = charAtPos.toUpperCase();
     } else if (state === 'wrong') {
       if (i < typed.length) {
-        const ok = typed[i] === word[i];
+        const ok = typed[i] === charAtPos;
         box.classList.add(ok ? 'correct' : 'wrong');
         box.textContent = typed[i].toUpperCase();
       }
@@ -952,12 +993,12 @@ function renderBoxes(state) {
         box.classList.add('filled');
         box.textContent = typed[i].toUpperCase();
       } else if (i === typed.length && typed.length < word.length) {
-        // This is the "next" empty box waiting for a letter
         box.classList.add('cursor');
+        // OPTIONAL: If the target character is an apostrophe, 
+        // you could make the cursor box look thinner via CSS
       }
     }
     disp.appendChild(box);
-  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -988,7 +1029,7 @@ function handleKey(k) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Backspace')           { e.preventDefault(); handleKey('⌫'); }
   else if (e.key === 'Enter')          { e.preventDefault(); checkSpelling(); }
-  else if (/^[a-zA-Z]$/.test(e.key))  { handleKey(e.key.toLowerCase()); }
+  else if (/^[a-zA-Z']$/.test(e.key))  { handleKey(e.key.toLowerCase()); }
 });
 
 // ══════════════════════════════════════════════════════
