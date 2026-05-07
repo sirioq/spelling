@@ -278,6 +278,30 @@ h1 {
 .kb-key.kb-del { background:linear-gradient(135deg,#ff9090,#e06060) !important; box-shadow:0 4px 0 #b03030 !important; }
 .kb-key.kb-del:active { transform:translateY(3px); box-shadow:0 1px 0 #b03030 !important; }
 
+
+/* Special purple styling for the 'smart' apostrophe key */
+.kb-key.kb-apo {
+  background: linear-gradient(135deg, #a259ff, #8040d0) !important;
+  box-shadow: 0 4px 0 #5e2ca3 !important;
+}
+
+.kb-key.kb-apo:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #5e2ca3 !important;
+}
+
+/* Optional: Slimmer box for the apostrophe in the display */
+.letter-box.is-punctuation {
+  width: clamp(20px, 5vw, 30px) !important;
+  border-color: transparent;
+  background: transparent;
+/* ADD THESE TWO LINES: */
+color: var(--dark) !important; 
+  border-bottom: 3px solid #e0e0e0 !important;
+
+
+}
+
 /* ── action row ── */
 .actions { display:flex; gap:10px; }
 .btn-check {
@@ -614,7 +638,7 @@ h1 {
 
     <div class="listen-area">
       <button class="btn-listen" id="btn-listen" onclick="speakWord()" title="Hear the word">🔊</button>
-      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Hint</button>
+      <button class="btn-hint" id="btn-hint" onclick="useHint()">💡 Spelling</button>
     </div>
 
     <div class="hint-box" id="hint-box" style="display:none"></div>
@@ -694,7 +718,7 @@ const PROMPTS_RIGHT = [
   'Woohoo! Correct!',
   'Brilliant spelling!',
   'You got it!',
-  //'Fantastic, Ludovica!',
+  
   'YES! Perfect!',
   'Superstar speller!',
   'Incredible!',
@@ -834,12 +858,30 @@ function buildParticles(emojis) {
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
   kb.innerHTML = '';
-  KB_ROWS.forEach(row => {
+  
+  // 1. Get the current word to check for apostrophes
+  const currentWord = words[wordIdx] ? words[wordIdx].word : "";
+  
+  // 2. Create a deep copy of your base KB_ROWS
+  let rowsToBuild = JSON.parse(JSON.stringify(KB_ROWS));
+
+  // 3. Inject apostrophe if needed
+  if (currentWord.includes("'")) {
+    const lastRow = rowsToBuild[2];
+    const backspaceIdx = lastRow.indexOf('⌫');
+    if (backspaceIdx !== -1) {
+      lastRow.splice(backspaceIdx, 0, "'");
+    }
+  }
+
+  rowsToBuild.forEach(row => {
     const rowEl = document.createElement('div');
     rowEl.className = 'kb-row';
     row.forEach(k => {
       const btn = document.createElement('button');
-      btn.className = 'kb-key' + (k === '⌫' ? ' kb-del' : '');
+      // Add a special class if it's the apostrophe for specific styling
+      const isApo = k === "'";
+      btn.className = 'kb-key' + (k === '⌫' ? ' kb-del' : '') + (isApo ? ' kb-apo' : '');
       btn.textContent = k;
       btn.dataset.key = k;
       btn.addEventListener('pointerdown', e => { e.preventDefault(); handleKey(k); });
@@ -879,17 +921,15 @@ function showWord() {
   firstTry = true;
   hideFeedback();
 
-  // counter
-  document.getElementById('word-counter').textContent =
-    `WORD ${wordIdx+1} OF ${words.length}`;
-  document.getElementById('strip-label').textContent =
-    `Word ${wordIdx+1} of ${words.length}`;
+  // Rebuild the keyboard to check if the NEW word needs an apostrophe
+  buildKeyboard();
 
-  // show emoji + definition
+  document.getElementById('word-counter').textContent = `WORD ${wordIdx+1} OF ${words.length}`;
+  document.getElementById('strip-label').textContent = `Word ${wordIdx+1} of ${words.length}`;
+
   document.getElementById('word-def-emoji').textContent = w.emoji || '⭐';
   document.getElementById('word-def-text').textContent  = w.hint  || 'Listen carefully!';
 
-  // hide hint box
   document.getElementById('hint-box').style.display = 'none';
   document.getElementById('hint-box').textContent = '';
 
@@ -898,7 +938,6 @@ function showWord() {
 
   setTimeout(speakWord, 300);
 }
-
 // ══════════════════════════════════════════════════════
 //  RENDER LETTER BOXES
 // ══════════════════════════════════════════════════════
@@ -926,24 +965,29 @@ function renderBoxes(state) {
   const disp = document.getElementById('spelling-display');
   disp.innerHTML = '';
 
-  // Use the length of what is actually typed to decide how many boxes to show
-  // We add +1 if the word isn't finished to show the 'cursor' box
   const displayLength = state === 'correct' ? word.length : Math.min(typed.length + 1, word.length);
   const { boxSize, fontSize, height } = calcBoxSize(word.length);
 
   for (let i = 0; i < displayLength; i++) {
     const box = document.createElement('div');
+    const charAtPos = word[i]; 
     box.className = 'letter-box';
+    
+    // Add the punctuation class so the CSS you added works
+    if (charAtPos === "'") {
+      box.classList.add('is-punctuation');
+    }
+
     box.style.width    = boxSize + 'px';
     box.style.height   = height + 'px';
     box.style.fontSize = fontSize + 'rem';
 
     if (state === 'correct') {
       box.classList.add('correct');
-      box.textContent = word[i].toUpperCase();
+      box.textContent = charAtPos.toUpperCase();
     } else if (state === 'wrong') {
       if (i < typed.length) {
-        const ok = typed[i] === word[i];
+        const ok = typed[i] === charAtPos;
         box.classList.add(ok ? 'correct' : 'wrong');
         box.textContent = typed[i].toUpperCase();
       }
@@ -952,14 +996,12 @@ function renderBoxes(state) {
         box.classList.add('filled');
         box.textContent = typed[i].toUpperCase();
       } else if (i === typed.length && typed.length < word.length) {
-        // This is the "next" empty box waiting for a letter
         box.classList.add('cursor');
       }
     }
     disp.appendChild(box);
-  }
+  } // <--- THIS WAS THE MISSING BRACKET
 }
-
 // ══════════════════════════════════════════════════════
 //  KEY HANDLING
 // ══════════════════════════════════════════════════════
@@ -988,7 +1030,7 @@ function handleKey(k) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Backspace')           { e.preventDefault(); handleKey('⌫'); }
   else if (e.key === 'Enter')          { e.preventDefault(); checkSpelling(); }
-  else if (/^[a-zA-Z]$/.test(e.key))  { handleKey(e.key.toLowerCase()); }
+  else if (/^[a-zA-Z']$/.test(e.key))  { handleKey(e.key.toLowerCase()); }
 });
 
 // ══════════════════════════════════════════════════════
@@ -1045,7 +1087,7 @@ function _unlockAudio() {
 
 // ── File probe ────────────────────────────────────────
 function _audioFilename(word) {
-  return '../audio/' + word.toLowerCase().replace(/ /g, '_');
+  return 'audio/' + word.toLowerCase().replace(/ /g, '_');
 }
 
 function _probeAudio(word) {
@@ -1376,7 +1418,7 @@ function celebrate() {
 
   let mainMsg = '';
   if (perfect) {
-    mainMsg = 'Yes! You spelled every word right with no hints! You\'re incredible! 👑';
+    mainMsg = 'You spelled every word right with no hints! You\'re incredible! 👑';
   } else if (pct === 100) {
     mainMsg = `Well done! All ${total} words correct! Next time try with no hints! 💡`;
   } else {
