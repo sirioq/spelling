@@ -5,16 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "girl's",   hint: "it belongs to her",        emoji: "🙋🏻‍♀️"},
-  { word: "school's",  hint: "it belongs to the Oratory",  emoji: "🏘️" },
-  { word: "dog's",'     hint: "it belongs to Spot",    emoji: "🐶" },
-  { word: "child's",   hint: "it belongs to a litle person",       emoji: "🧒" },
-  { word: "man's",     hint: "it belongs to a grown up",       emoji: "🧔🏻" },
-  { word: "woman's",   hint: "it belongs to a grown up",    emoji: "👩🏻‍💼" },
-  { word: "boy's",    hint: "it belongs to him",           emoji: "🙋🏻" },
-  { word: "teacher's",  hint: "it belongs to Mrs. Halls",    emoji: "👩‍🦰" },
-  { word: "postman's",  hint: "it belongs to the person who delivers letters",    emoji: "📮" },
-  { word: "Erin's",  hint: "it belongs to someone I don't know!",    emoji: "🤷‍♀️" },
+  { word: "can't",   hint: "",        emoji: "" },
+  { word: "didn't",  hint: "",  emoji: "" },
+  { word: "hasn't",     hint: "",    emoji: "" },
+  { word: "couldn't",   hint: "",       emoji: "" },
+  { word: "wouldn't",     hint: "",       emoji: "" },
+  { word: "shouldn't",   hint: "",    emoji: "" },
+  { word: "wasn't",    hint: "",           emoji: "" },
+  { word: "aren't",  hint: "",    emoji: "" },
+  { word: "it's",  hint: "",    emoji: "" },
+  { word: "I'm",  hint: "",    emoji: "" },
 ];
 
 // The date of this week's test — shown on the start screen.
