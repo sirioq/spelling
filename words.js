@@ -7,7 +7,7 @@
 const SPELLING_WORDS = [
   { word: "girl's",   hint: "it belongs to her",        emoji: "🙋🏻‍♀️"},
   { word: "school's",  hint: "it belongs to the Oratory",  emoji: "🏘️" },
-  { word: "dog's",'     hint: "it belongs to Spot",    emoji: "🐶" },
+  { word: "dog's",    hint: "it belongs to Spot",    emoji: "🐶" },
   { word: "child's",   hint: "it belongs to a litle person",       emoji: "🧒" },
   { word: "man's",     hint: "it belongs to a grown up",       emoji: "🧔🏻" },
   { word: "woman's",   hint: "it belongs to a grown up",    emoji: "👩🏻‍💼" },
