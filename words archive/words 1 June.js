@@ -5,21 +5,21 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "there ",   hint: "in that place",        emoji: "⤴️"},
-  { word: "they're",  hint: "the people are",  emoji: "👯‍♀️" },
-  { word: "their",    hint: "it belongs to them",    emoji: "👉" },
-  { word: "hear",   hint: "listen",       emoji: "👂" },
-  { word: "here",     hint: "this place",       emoji: "⬇️" },
-  { word: "to",   hint: "in the direction of",    emoji: "➡️" },
-  { word: "too",    hint: "as well",           emoji: "➕" },
-  { word: "two",  hint: "the number after one",    emoji: "✌️" },
-  { word: "see",  hint: "what eyes are for",    emoji: "👀" },
-  { word: "sea",  hint: "where fish swim",    emoji: "🐠" },
+  { word: "any",   hint: "it doesn't matter which one",        emoji: "🤷🏻‍♂️"},
+  { word: "many",  hint: "lots",  emoji: "🥞" },
+  { word: "clothes",    hint: "what you wear",    emoji: "🧥" },
+  { word: "water",   hint: "the best drink",       emoji: "💧" },
+  { word: "pretty",     hint: "looks very nice",       emoji: "👗" },
+  { word: "Christmas",   hint: "the most wonderful time of the year",    emoji: "🎄" },
+  { word: "beautiful",    hint: "like a rose",           emoji: "🌹" },
+  { word: "busy",  hint: "as ______ as a bee",    emoji: "🐝" },
+  { word: "poor",  hint: "unfortunate",    emoji: "🧎🏻" },
+  { word: "kind",  hint: "what we must strive to be",    emoji: "🫶" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Monday 8th June 2026";
+const TEST_DATE = "Monday 1st June 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
