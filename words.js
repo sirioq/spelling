@@ -6,15 +6,15 @@
 
 const SPELLING_WORDS = [
   { word: "there ",   hint: "in that place",        emoji: "⤴️"},
-  { word: "they're",  hint: "the people are",  emoji: "👯‍♀️" },
-  { word: "their",    hint: "it belongs to them",    emoji: "👉" },
-  { word: "hear",   hint: "listen",       emoji: "👂" },
-  { word: "here",     hint: "this place",       emoji: "⬇️" },
-  { word: "to",   hint: "in the direction of",    emoji: "➡️" },
-  { word: "too",    hint: "as well",           emoji: "➕" },
-  { word: "two",  hint: "the number after one",    emoji: "✌️" },
-  { word: "see",  hint: "what eyes are for",    emoji: "👀" },
-  { word: "sea",  hint: "where fish swim",    emoji: "🐠" },
+  { word: "they're ",  hint: "the people are",  emoji: "👯‍♀️" },
+  { word: "their ",    hint: "it belongs to them",    emoji: "👉" },
+  { word: "hear ",   hint: "listen",       emoji: "👂" },
+  { word: "here ",     hint: "this place",       emoji: "⬇️" },
+  { word: "to ",   hint: "in the direction of",    emoji: "➡️" },
+  { word: "too ",    hint: "as well",           emoji: "➕" },
+  { word: "two ",  hint: "the number after one",    emoji: "✌️" },
+  { word: "see ",  hint: "what eyes are for",    emoji: "👀" },
+  { word: "sea ",  hint: "where fish swim",    emoji: "🐠" },
 ];
 
 // The date of this week's test — shown on the start screen.
