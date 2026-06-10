@@ -7,10 +7,10 @@
 const SPELLING_WORDS = [
   { word: "bee ",   hint: "it buzzes and makes honey",   emoji: "🐝"},
   { word: "be ",  hint: "to exist",  emoji: "" },
-  { word: "quite ",    hint: "a bit",    emoji: "" },
+  { word: "quite ",    hint: "a bit",    emoji: "🤏" },
   { word: "quiet ",   hint: "don't make a noise",       emoji: "🤫" },
   { word: "bear ",     hint: "a big furry animal",       emoji: "🐻" },
-  { word: "bare ",   hint: "empty",    emoji: "" },
+  { word: "bare ",   hint: "empty",    emoji: "💭" },
   { word: "won ",    hint: "you came first!",           emoji: "🥇" },
   { word: "one ",  hint: "the first number",    emoji: "1️⃣" },
   { word: "sun ",  hint: "the star at the centre of our solar system",    emoji: "☀️" },
