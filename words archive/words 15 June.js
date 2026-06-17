@@ -5,16 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "night ",   hint: "the opposite of day",   emoji: "🌒"},
-  { word: "knight ",  hint: "he wears shining armour",  emoji: "♞" },
-  { word: "blue ",    hint: "the colour of the sea",    emoji: "🔵" },
-  { word: "blew ",   hint: "what the wind did",       emoji: "🌬️" },
-  { word: "hole ",     hint: "an empty space",       emoji: "🕳️" },
-  { word: "whole ",   hint: "everything",    emoji: "💯" },
-  { word: "because ",    hint: "the reason",           emoji: "💁" },
-  { word: "so  ",  hint: "therefore",    emoji: "🤷🏻‍♂️" },
-  { word: "that ",  hint: "not this",    emoji: "" },
-  { word: "or ",  hint: "a choice",    emoji: "👉" },
+  { word: "bee ",   hint: "it buzzes and makes honey",   emoji: "🐝"},
+  { word: "be ",  hint: "to exist",  emoji: "" },
+  { word: "quite ",    hint: "a bit",    emoji: "🤏" },
+  { word: "quiet ",   hint: "don't make a noise",       emoji: "🤫" },
+  { word: "bear ",     hint: "a big furry animal",       emoji: "🐻" },
+  { word: "bare ",   hint: "empty",    emoji: "💭" },
+  { word: "won ",    hint: "you came first!",           emoji: "🥇" },
+  { word: "one ",  hint: "the first number",    emoji: "1️⃣" },
+  { word: "sun ",  hint: "the star at the centre of our solar system",    emoji: "☀️" },
+  { word: "son ",  hint: "a child who's a boy",    emoji: "🧍🏻" },
 ];
 
 // The date of this week's test — shown on the start screen.
