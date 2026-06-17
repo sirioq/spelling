@@ -13,8 +13,8 @@ const SPELLING_WORDS = [
   { word: "whole ",   hint: "everything",    emoji: "💯" },
   { word: "because ",    hint: "the reason",           emoji: "💁" },
   { word: "so  ",  hint: "therefore",    emoji: "🤷🏻‍♂️" },
-  { word: "that ",  hint: "not this",    emoji: "" },
-  { word: "or ",  hint: "a choice",    emoji: "👉" },
+  { word: "that ",  hint: "not this",    emoji: "👉" },
+  { word: "or ",  hint: "a choice",    emoji: "🤔" },
 ];
 
 // The date of this week's test — shown on the start screen.
