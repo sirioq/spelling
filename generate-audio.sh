@@ -31,7 +31,7 @@
 #      work in Safari/Chrome.
 # ─────────────────────────────────────────────────────────────
 
-VOICE="Serena"    # Run: say -v "?" to list all available voices
+VOICE="Stephanie"    # Run: say -v "?" to list all available voices
 RATE=160          # Words per minute (175 = normal, lower = clearer)
 WORDS_FILE="words.js"
 AUDIO_DIR="audio"
