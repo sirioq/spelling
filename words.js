@@ -5,21 +5,21 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "night ",   hint: "the opposite of day",   emoji: "🌒"},
-  { word: "knight ",  hint: "he wears shining armour",  emoji: "♞" },
-  { word: "blue ",    hint: "the colour of the sea",    emoji: "🔵" },
-  { word: "blew ",   hint: "what the wind did",       emoji: "🌬️" },
-  { word: "hole ",     hint: "an empty space",       emoji: "🕳️" },
-  { word: "whole ",   hint: "everything",    emoji: "💯" },
-  { word: "because ",    hint: "the reason",           emoji: "💁" },
-  { word: "so  ",  hint: "therefore",    emoji: "🤷🏻‍♂️" },
-  { word: "that ",  hint: "not this",    emoji: "👉" },
-  { word: "or ",  hint: "a choice",    emoji: "🤔" },
+  { word: "January ",   hint: "the month of the Epiphany",   emoji: "👑 "},
+  { word: "February ",  hint: "the month of Valentine's day",  emoji: "❤️" },
+  { word: "March ",    hint: "beware the ides of ....",    emoji: "🔪" },
+  { word: "April ",   hint: "Fool's day",       emoji: "🤡" },
+  { word: "May ",     hint: "the month with the most bank holidays",       emoji: "🏦" },
+  { word: "June ",   hint: "the month with the longest days",    emoji: "🕰️" },
+  { word: "July ",    hint: "Bastille day in France",           emoji: "🇫🇷" },
+  { word: "August ",  hint: "the month with no school",    emoji: "🏫" },
+  { word: "September ",  hint: "the month with the autumnal equinox",    emoji: "🌓" },
+  { word: "October ",  hint: "Halloween",    emoji: "🎃" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Monday 22nd June 2026";
+const TEST_DATE = "Monday 29th June 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
