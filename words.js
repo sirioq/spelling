@@ -10,7 +10,7 @@ const SPELLING_WORDS = [
   { word: "month ",    hint: "There are twelve in a year",    emoji: "📆" },
   { word: "hour ",   hint: "60 minutes",       emoji: "⏱️" },
   { word: "half ",     hint: "split in two",       emoji: "½" },
-  { word: "quarter ",   hint: "split into four",    emoji: "🕰️¼" },
+  { word: "quarter ",   hint: "split into four",    emoji: "¼" },
   { word: "past ",    hint: "it's already happened",           emoji: "⏮️" },
   { word: "after ",  hint: "later",    emoji: "⏭️" },
   { word: "before ",  hint: "earlier",    emoji: "↪️" },
