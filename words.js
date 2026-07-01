@@ -4,7 +4,7 @@
 //  if Ludovica gets stuck. You can also add an "emoji" for fun.
 // ─────────────────────────────────────────────────────────────
 
-const SPELLING_WORDS = [🎅🏻
+const SPELLING_WORDS = [
   { word: "November ",   hint: "All Saints Day",   emoji: "😇"},
   { word: "December ",  hint: "Christmas",  emoji: "🎅🏻" },
   { word: "month ",    hint: "There are twelve in a year",    emoji: "📆" },
