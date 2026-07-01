@@ -4,22 +4,22 @@
 //  if Ludovica gets stuck. You can also add an "emoji" for fun.
 // ─────────────────────────────────────────────────────────────
 
-const SPELLING_WORDS = [
-  { word: "January ",   hint: "the month of the Epiphany",   emoji: "👑 "},
-  { word: "February ",  hint: "the month of Valentine's day",  emoji: "❤️" },
-  { word: "March ",    hint: "beware the ides of ....",    emoji: "🔪" },
-  { word: "April ",   hint: "Fool's day",       emoji: "🤡" },
-  { word: "May ",     hint: "the month with the most bank holidays",       emoji: "🏦" },
-  { word: "June ",   hint: "the month with the longest days",    emoji: "🕰️" },
-  { word: "July ",    hint: "Bastille day in France",           emoji: "🇫🇷" },
-  { word: "August ",  hint: "the month with no school",    emoji: "🏫" },
-  { word: "September ",  hint: "the month with the autumnal equinox",    emoji: "🌓" },
-  { word: "October ",  hint: "Halloween",    emoji: "🎃" },
+const SPELLING_WORDS = [🎅🏻
+  { word: "November ",   hint: "All Saints Day",   emoji: "😇"},
+  { word: "December ",  hint: "Christmas",  emoji: "🎅🏻" },
+  { word: "month ",    hint: "There are twelve in a year",    emoji: "📆" },
+  { word: "hour ",   hint: "60 minutes",       emoji: "⏱️" },
+  { word: "half ",     hint: "split in two",       emoji: "½" },
+  { word: "quarter ",   hint: "split into four",    emoji: "🕰️¼" },
+  { word: "past ",    hint: "it's already happened",           emoji: "⏮️" },
+  { word: "after ",  hint: "later",    emoji: "⏭️" },
+  { word: "before ",  hint: "earlier",    emoji: "↪️" },
+  { word: "now ",  hint: "the present",    emoji: "↔️" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Monday 29th June 2026";
+const TEST_DATE = "Monday 6th July 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
