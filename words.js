@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  WEEKLY SPELLING WORDS  —  edit this file each week!
 //  Each entry needs a "word". The "hint" is optional but helps
-//  if Ludovica gets stuck. You can also add an "emoji" for fun.🤦‍♀️
+//  if Ludovica gets stuck. You can also add an "emoji" for fun.
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
@@ -23,4 +23,4 @@ const TEST_DATE = "Monday 13th July 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
-const SEASON = "summer";👐
+const SEASON = "summer";
