@@ -3,9 +3,9 @@
 //  Each entry needs a "word". The "hint" is optional but helps
 //  if Ludovica gets stuck. You can also add an "emoji" for fun.
 // ─────────────────────────────────────────────────────────────
-🏋️
+
 const SPELLING_WORDS = [
-  { word: "eight ",   hint: "How many legs an octopus has",   emoji: "🐙"},
+  { word: "eight ",   hint: "How many legs an octopus has",   emoji: "🐙" },
   { word: "eighth ",  hint: "My birthday is on the 8th July",  emoji: "🎂" },
   { word: "eighty ",    hint: "The number 80",    emoji: "" },
   { word: "weight ",   hint: "Something heavy",       emoji: "🏋️" },
