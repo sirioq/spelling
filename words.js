@@ -6,8 +6,8 @@
 
 const SPELLING_WORDS = [
   { word: "hey ",   hint: "Watch out!",   emoji: "😣" },
-  { word: "they ",  hint: "Other people,  emoji: "👫" },
-  { word: "obey ",    hint: "Do what you are told",    emoji: "👮🏻‍♀️👮" },
+  { word: "they ",  hint: "Other people",  emoji: "👫" },
+  { word: "obey ",    hint: "Do what you are told",    emoji: "👮" },
   { word: "grey ",   hint: "A mix of white and black",       emoji: "" },
   { word: "prey ",     hint: "Food for a predator",       emoji: "🐁" },
   { word: "survey ",   hint: "A list of questions",    emoji: "📋" },
