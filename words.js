@@ -13,7 +13,6 @@ const SPELLING_WORDS = [
   { word: "survey ",   hint: "A list of questions",    emoji: "📋" },
   { word: "convey ",    hint: "To transfer",           emoji: "🚚" },
   { word: "disobey ",  hint: "Not to do what you are told",    emoji: "👮" },
-  
 ];
 
 // The date of this week's test — shown on the start screen.
