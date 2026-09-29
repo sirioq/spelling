@@ -5,16 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "accept ",   hint: "to agree",   emoji: "" },
-  { word: "except ",  hint: "apart from",  emoji: "" },
-  { word: "groan ",    hint: "When your Daddy makes a joke",    emoji: "" },
-  { word: "grown ",   hint: "big",       emoji: "" },
-  { word: "ball ",     hint: "a round thing",       emoji: "" },
-  { word: "bawl ",     hint: "crying a lot",       emoji: "" },
-  { word: "berry ",   hint: "a fruit",    emoji: "" },
-  { word: "bury ",    hint: "hide it in the ground",           emoji: "" },
-  { word: "brake ",  hint: "Use it to stop a car",    emoji: "" },
-  { word: "break ",  hint: "snap it in two",    emoji: "" },
+  { word: "accept ",   hint: "to agree",   emoji: "🤝" },
+  { word: "except ",  hint: "apart from",  emoji: "❌" },
+  { word: "groan ",    hint: "When your Daddy makes a joke",    emoji: "😩" },
+  { word: "grown ",   hint: "big",       emoji: "🌲" },
+  { word: "ball ",     hint: "a round thing",       emoji: "⚽️" },
+  { word: "bawl ",     hint: "crying a lot",       emoji: "😭" },
+  { word: "berry ",   hint: "a fruit",    emoji: "🫐" },
+  { word: "bury ",    hint: "hide it in the ground",           emoji: "🪏" },
+  { word: "brake ",  hint: "Use it to stop a car",    emoji: "✋" },
+  { word: "break ",  hint: "snap it in two",    emoji: "💔" },
 ];
 
 // The date of this week's test — shown on the start screen.
