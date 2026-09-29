@@ -5,21 +5,19 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "accept ",   hint: "to agree",   emoji: "" },
-  { word: "except ",  hint: "apart from",  emoji: "" },
-  { word: "groan ",    hint: "When your Daddy makes a joke",    emoji: "" },
-  { word: "grown ",   hint: "big",       emoji: "" },
-  { word: "ball ",     hint: "a round thing",       emoji: "" },
-  { word: "bawl ",     hint: "crying a lot",       emoji: "" },
-  { word: "berry ",   hint: "a fruit",    emoji: "" },
-  { word: "bury ",    hint: "hide it in the ground",           emoji: "" },
-  { word: "brake ",  hint: "Use it to stop a car",    emoji: "" },
-  { word: "break ",  hint: "snap it in two",    emoji: "" },
+  { word: "hey ",   hint: "Watch out!",   emoji: "😣" },
+  { word: "they ",  hint: "Other people",  emoji: "👫" },
+  { word: "obey ",    hint: "Do what you are told",    emoji: "👮" },
+  { word: "grey ",   hint: "A mix of white and black",       emoji: "" },
+  { word: "prey ",     hint: "Food for a predator",       emoji: "🐁" },
+  { word: "survey ",   hint: "A list of questions",    emoji: "📋" },
+  { word: "convey ",    hint: "To transfer",           emoji: "🚚" },
+  { word: "disobey ",  hint: "Not to do what you are told",    emoji: "👮" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Friday 2nd October 2026";
+const TEST_DATE = "Friday 25th September 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
