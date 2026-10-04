@@ -10,7 +10,7 @@ const SPELLING_WORDS = [
   { word: "meat ",    hint: "what a carnivore eats",    emoji: "🥩" },
   { word: "meet ",   hint: "to see someone",       emoji: "🤝" },
   { word: "missed ",     hint: "you didn't hit the target",       emoji: "😿" },
-  { word: "mist ",     hint: "morning fog,       emoji: "🌫️" },
+  { word: "mist ",     hint: "morning fog",       emoji: "🌫️" },
   { word: "piece ",   hint: "a part",    emoji: "🧩" },
   { word: "peace ",    hint: "calm",           emoji: "✌️" },
 ];
