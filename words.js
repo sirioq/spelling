@@ -8,7 +8,7 @@ const SPELLING_WORDS = [
   { word: "mail ",   hint: "what the postman delivers",   emoji: "📨" },
   { word: "male ",  hint: "a boy",  emoji: "👦🏻" },
   { word: "meat ",    hint: "what a carnivore eats",    emoji: "🥩" },
-  { word: "meet ",   hint: "to see someone,       emoji: "🤝" },
+  { word: "meet ",   hint: "to see someone",       emoji: "🤝" },
   { word: "missed ",     hint: "you didn't hit the target",       emoji: "😿" },
   { word: "mist ",     hint: "morning fog,       emoji: "🌫️" },
   { word: "piece ",   hint: "a part",    emoji: "🧩" },
