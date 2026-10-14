@@ -5,14 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "mail ",   hint: "what the postman delivers",   emoji: "📨" },
-  { word: "male ",  hint: "a boy",  emoji: "👦🏻" },
-  { word: "meat ",    hint: "what a carnivore eats",    emoji: "🥩" },
-  { word: "meet ",   hint: "to see someone",       emoji: "🤝" },
-  { word: "missed ",     hint: "you didn't hit the target",       emoji: "😿" },
-  { word: "mist ",     hint: "morning fog",       emoji: "🌫️" },
-  { word: "piece ",   hint: "a part",    emoji: "🧩" },
-  { word: "peace ",    hint: "calm",           emoji: "✌️" },
+  { word: "bicycle ",   hint: "it has two wheels",   emoji: "🚲" },
+  { word: "centre ",  hint: "in the middle",  emoji: "🎯" },
+  { word: "century ",    hint: "one hundred years",    emoji: "💯" },
+  { word: "certain ",   hint: "I'm sure",       emoji: "👍🏽" },
+  { word: "circle ",     hint: "a round thing",       emoji: "⭕️" },
+  { word: "decide ",     hint: "to choose",       emoji: "🤔" },
+  { word: "exercise ",   hint: "it keeps you fit",    emoji: "🏃" },
+  { word: "medicine ",    hint: "it makes you feel better",           emoji: "💊" },
+  { word: "notice ",   hint: "to see something",    emoji: "👀" },
+  { word: "recent ",    hint: "a short time ago",           emoji: "📆" },
 ];
 
 // The date of this week's test — shown on the start screen.
