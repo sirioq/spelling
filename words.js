@@ -5,21 +5,19 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "bicycle ",   hint: "it has two wheels",   emoji: "🚲" },
-  { word: "centre ",  hint: "in the middle",  emoji: "🎯" },
-  { word: "century ",    hint: "one hundred years",    emoji: "💯" },
-  { word: "certain ",   hint: "I'm sure",       emoji: "👍🏽" },
-  { word: "circle ",     hint: "a round thing",       emoji: "⭕️" },
-  { word: "decide ",     hint: "to choose",       emoji: "🤔" },
-  { word: "exercise ",   hint: "it keeps you fit",    emoji: "🏃" },
-  { word: "medicine ",    hint: "it makes you feel better",           emoji: "💊" },
-  { word: "notice ",   hint: "to see something",    emoji: "👀" },
-  { word: "recent ",    hint: "a short time ago",           emoji: "📆" },
+  { word: "accident ",   hint: "by mistake",   emoji: "🤕" },
+  { word: "address ",  hint: "where you live",  emoji: "🏠" },
+  { word: "appear ",    hint: "show up",    emoji: "🪄" },
+  { word: "arrive ",   hint: "to get somewhere",       emoji: "🛬" },
+  { word: "business ",     hint: "a job",       emoji: "🏦" },
+  { word: "different ",     hint: "not the same",       emoji: "👫" },
+  { word: "difficult ",   hint: "very tricky",    emoji: "😩" },
+  { word: "disappear ",    hint: "vanish",           emoji: "💨" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Friday 16th October 2026";
+const TEST_DATE = "Friday 23rd October 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
