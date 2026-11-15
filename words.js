@@ -5,21 +5,20 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "sadly ",   hint: "unhappy",   emoji: "😢" },
-  { word: "completely ",  hint: "totally",  emoji: "💯" },
-  { word: "usually ",    hint: "normally",    emoji: "" },
-  { word: "finally ",   hint: "at the end",       emoji: "" },
-  { word: "comically ",     hint: "funny",       emoji: "🤡" },
-  { word: "quickly ",     hint: "fast",       emoji: "💨" },
-  { word: "quietly ",   hint: "shhh",    emoji: "🤫" },
-  { word: "kindly ",    hint: "nicely",           emoji: "😇" },
-  { word: "gently ",   hint: "softly",    emoji: "🪶" },
-  { word: "bravely ",    hint: "without fear",           emoji: "🤺" },
+  { word: "happily",   hint: "with pleasure",   emoji: "😀" },
+  { word: "angrily ",  hint: "furious",  emoji: "😡" },
+  { word: "greedily ",    hint: "wanting everything",    emoji: "🤑" },
+  { word: "luckily ",   hint: "fortunately",       emoji: "🍀" },
+  { word: "easily ",     hint: "not difficult",       emoji: "😌" },
+  { word: "sleepily ",     hint: "tired",       emoji: "😴" },
+  { word: "lazily ",   hint: "low energy",    emoji: "🥱" },
+  { word: "noisily ",    hint: "loud",           emoji: "🥳" },
+  { word: "wearily ",   hint: "exhausted",    emoji: "🫩" },
 ];
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Friday 13th November 2026";
+const TEST_DATE = "Friday 20th November 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
