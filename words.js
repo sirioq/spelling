@@ -19,7 +19,7 @@ const SPELLING_WORDS = [
 
 // The date of this week's test — shown on the start screen.
 // Update this each week alongside the words.
-const TEST_DATE = "Friday 20th November 2026";
+const TEST_DATE = "Friday 27th November 2026";
 
 // Optional: set the season theme for this week.
 // Choices: "spring" | "summer" | "autumn" | "winter"
