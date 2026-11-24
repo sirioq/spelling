@@ -5,15 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 
 const SPELLING_WORDS = [
-  { word: "happily",   hint: "with pleasure",   emoji: "😀" },
-  { word: "angrily ",  hint: "furious",  emoji: "😡" },
-  { word: "greedily ",    hint: "wanting everything",    emoji: "🤑" },
-  { word: "luckily ",   hint: "fortunately",       emoji: "🍀" },
-  { word: "easily ",     hint: "not difficult",       emoji: "😌" },
-  { word: "sleepily ",     hint: "tired",       emoji: "😴" },
-  { word: "lazily ",   hint: "low energy",    emoji: "🥱" },
-  { word: "noisily ",    hint: "loud",           emoji: "🥳" },
-  { word: "wearily ",   hint: "exhausted",    emoji: "🫩" },
+  { word: "gently ",   hint: "softly",   emoji: "🪶" },
+  { word: "simply ",  hint: "not complicated",  emoji: "🍚" },
+  { word: "humbly ",    hint: "modest",    emoji: "😌" },
+  { word: "nobly ",   hint: "grandly",       emoji: "🤴🏻" },
+  { word: "probably ",     hint: "most likely",       emoji: "👍🏽" },
+  { word: "horribly ",     hint: "very bad",       emoji: "🧟‍♂️" },
+  { word: "illegibly ",   hint: "impossible to read",    emoji: "📝" },
+  { word: "impossibly ",    hint: "can't be done",           emoji: "❌" },
+  { word: "incredibly ",   hint: "amazing",    emoji: "🧗🏻‍♂️" },
+  { word: "possibly ",   hint: "maybe",    emoji: "⚖️" },
 ];
 
 // The date of this week's test — shown on the start screen.
